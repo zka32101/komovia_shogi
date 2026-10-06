@@ -1,0 +1,1 @@
+# komovia_shogi
