@@ -1,0 +1,24 @@
+name: komovia_shogi
+description: >
+  Shogi rules, AI, puzzles, kifu, and board rendering for Komovia, implementing
+  komovia_core's Game/Engine/BoardRenderer interfaces. Ported from 効棋
+  (zka32101/kouki-shogi).
+publish_to: "none"
+
+version: 0.1.0
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  komovia_core:
+    git:
+      url: https://github.com/zka32101/komovia_core
+      ref: main
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
