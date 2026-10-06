@@ -13,3 +13,4 @@ export 'src/shogi_engine.dart';
 export 'src/shogi_game.dart';
 export 'src/shogi_handicap_rule.dart';
 export 'src/shogi_position.dart';
+export 'src/shogi_puzzle.dart';
