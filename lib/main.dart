@@ -71,9 +71,14 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
       return;
     }
 
+    // Evaluated eagerly (not left as a lazy Iterable) because its
+    // predicate closes over `_selected`, which the setState below
+    // mutates — a lazy `.where()` re-evaluated after that setState would
+    // always see `_selected == null` and find no match.
     final matches = legal
         .whereType<BoardMove>()
-        .where((m) => m.from == _selected && m.to == square);
+        .where((m) => m.from == _selected && m.to == square)
+        .toList();
     setState(() {
       _selected = null;
       _hints = const [];
