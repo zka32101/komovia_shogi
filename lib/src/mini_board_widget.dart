@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'piece.dart';
 import 'theme/app_theme.dart';
+import 'widgets/board_background_painter.dart';
 import 'widgets/koma_painter.dart';
 
 class MiniBoardWidget extends StatelessWidget {
@@ -20,6 +21,8 @@ class MiniBoardWidget extends StatelessWidget {
   final Map<PieceType, int> p2Hand;      // 後手持ち駒（表示用）
   final List<List<int>>? p1AttackMap;    // 効き可視化: 先手の利き数（null=非表示）
   final List<List<int>>? p2AttackMap;    // 効き可視化: 後手の利き数（null=非表示）
+  final bool textured;                   // 木目調の盤背景（§3-5「洗練されたUI」）
+  final double? advantageRatio;          // 有利度オーバーレイ（null=非表示、0.5=互角）
 
   const MiniBoardWidget({
     super.key,
@@ -38,11 +41,18 @@ class MiniBoardWidget extends StatelessWidget {
     this.p2Hand = const {},
     this.p1AttackMap,
     this.p2AttackMap,
+    this.textured = false,
+    this.advantageRatio,
   });
 
   // Colors matching game_screen.dart standard theme
   static const _cellColor = Color(0xFFDEB887);
   static const _cellBorder = Color(0xFF7A4E2B);
+
+  // Colors matching game_screen.dart's PieceTheme.textured
+  static const _texturedBorder = Color(0xFF8D6E63);
+  static const _texturedGradientTop = Color(0xFF3E2723);
+  static const _texturedGradientBottom = Color(0xFF5D4037);
 
   @override
   Widget build(BuildContext context) {
@@ -53,22 +63,7 @@ class MiniBoardWidget extends StatelessWidget {
       // 外枠(2px×2)の内側に9マスを収める（枠込みの幅で割ると右/下が4px溢れる）
       final cellSize = (boardSize - 4) / 9;
 
-      Widget boardGrid = Container(
-        width: boardSize,
-        height: boardSize,
-        clipBehavior: Clip.hardEdge,
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFF4A2E0A), width: 2),
-          color: _cellColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(80),
-              blurRadius: 8,
-              offset: const Offset(1, 3),
-            ),
-          ],
-        ),
-        child: Column(
+      Widget cellGrid = Column(
           mainAxisSize: MainAxisSize.min,
           children: List.generate(9, (r) =>
             Row(
@@ -110,16 +105,30 @@ class MiniBoardWidget extends StatelessWidget {
                 if (isHintTo) bg = AppTheme.accent;
                 if (isHL) bg = Colors.lightBlue.shade100;
 
+                // When textured, an unhighlighted cell stays transparent
+                // so the wood-grain background painted behind the grid
+                // shows through; a highlighted cell keeps its tint, just
+                // blended at lower opacity over that background.
+                final isDefaultBg = bg == _cellColor;
+                final cellBg = textured
+                    ? (isDefaultBg
+                        ? Colors.transparent
+                        : Color.lerp(Colors.transparent, bg, 0.55))
+                    : bg;
+
                 return Container(
                   width: cellSize,
                   height: cellSize,
                   decoration: BoxDecoration(
-                    color: bg,
+                    color: cellBg,
                     border: isLastTo && hintTo == null
                         ? Border.all(color: Colors.amber.shade600, width: 1.5)
                         : isHintTo
                         ? Border.all(color: AppTheme.accent, width: 1.5)
-                        : Border.all(color: _cellBorder, width: 0.6),
+                        : Border.all(
+                            color: textured ? _texturedBorder : _cellBorder,
+                            width: 0.6,
+                          ),
                   ),
                   child: Stack(children: [
                     if (piece != null)
@@ -165,6 +174,47 @@ class MiniBoardWidget extends StatelessWidget {
               }),
             ),
           ),
+      );
+
+      final boardGrid = Container(
+        width: boardSize,
+        height: boardSize,
+        clipBehavior: Clip.hardEdge,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: textured ? _texturedBorder : const Color(0xFF4A2E0A),
+            width: 2,
+          ),
+          color: textured ? null : _cellColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(80),
+              blurRadius: 8,
+              offset: const Offset(1, 3),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            if (textured)
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: const BoardBackgroundPainter(
+                    gradientTop: _texturedGradientTop,
+                    gradientBottom: _texturedGradientBottom,
+                  ),
+                ),
+              ),
+            cellGrid,
+            if (advantageRatio != null)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: AdvantageOverlayPainter(ratio: advantageRatio!),
+                  ),
+                ),
+              ),
+          ],
         ),
       );
 
