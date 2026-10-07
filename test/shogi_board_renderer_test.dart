@@ -51,6 +51,41 @@ void main() {
       );
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('builds with textured background and an advantage overlay',
+        (tester) async {
+      final pos = game.initialPosition();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 360,
+                height: 360,
+                child: renderer.build(
+                  pos,
+                  textured: true,
+                  advantageRatio: ShogiBoardRenderer.materialAdvantageRatio(pos),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('ShogiBoardRenderer.materialAdvantageRatio', () {
+    test('is 0.5 (even) on the standard initial position', () {
+      final pos = game.initialPosition();
+      expect(ShogiBoardRenderer.materialAdvantageRatio(pos), 0.5);
+    });
+
+    test('favors 先手 when 後手 is missing material (飛車落ち)', () {
+      final pos = ShogiHandicapRule.rook.apply(game.initialPosition());
+      expect(ShogiBoardRenderer.materialAdvantageRatio(pos), greaterThan(0.5));
+    });
   });
 
   group('ShogiBoardRenderer.squareAt', () {
