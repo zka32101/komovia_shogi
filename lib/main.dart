@@ -1,16 +1,30 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:komovia_core/komovia_core.dart';
 import 'package:komovia_shogi/komovia_shogi.dart';
 
-/// komovia_shogi as a standalone runnable app: a single AI対局 screen that
-/// exercises `ShogiGame`/`ShogiEngine`/`ShogiBoardRenderer` end to end.
+import 'firebase_options.dart';
+import 'viewmodels/index.dart';
+import 'views/screens/home_screen.dart';
+
+/// komovia_shogi: the shogi AI対局 demo screen (`ShogiGameScreen`, exercising
+/// `ShogiGame`/`ShogiEngine`/`ShogiBoardRenderer` end to end) plus a social
+/// layer (friends/notifications/messages/leaderboard/tournaments) built on
+/// komovia_core's shared models, reached from a `HomeScreen` hub.
 ///
-/// This is intentionally minimal (one screen, no lobby/settings/5タブ
-/// construction — see the design doc's §3-3 "共通画面", a later-stage
-/// concern). It exists to let komovia_shogi run and be verified on a real
-/// device/emulator, rather than only through `flutter test`.
-void main() {
-  runApp(const KomoviaShogiApp());
+/// Firebase is initialized with placeholder config (`firebase_options.dart`)
+/// until `flutterfire configure` is run against a real project.
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  } catch (_) {
+    // Placeholder Firebase config won't actually initialize against a real
+    // backend; swallow so the shogi demo screen still runs standalone.
+  }
+  runApp(const ProviderScope(child: KomoviaShogiApp()));
 }
 
 class KomoviaShogiApp extends StatelessWidget {
@@ -21,7 +35,46 @@ class KomoviaShogiApp extends StatelessWidget {
     return MaterialApp(
       title: 'Komovia Shogi',
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown)),
-      home: const ShogiGameScreen(),
+      home: const _RootScreen(),
+    );
+  }
+}
+
+/// Signs the user in anonymously (if not already) so the social features
+/// have a stable uid, then shows [HomeScreen].
+class _RootScreen extends ConsumerStatefulWidget {
+  const _RootScreen();
+
+  @override
+  ConsumerState<_RootScreen> createState() => _RootScreenState();
+}
+
+class _RootScreenState extends ConsumerState<_RootScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _ensureSignedIn();
+  }
+
+  Future<void> _ensureSignedIn() async {
+    try {
+      if (FirebaseAuth.instance.currentUser == null) {
+        await ref.read(authServiceProvider).signInAnonymously();
+      }
+    } catch (_) {
+      // No real Firebase project configured yet — social screens will show
+      // their signed-out state instead of crashing.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return HomeScreen(
+      onPlayShogi: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ShogiGameScreen()),
+        );
+      },
     );
   }
 }

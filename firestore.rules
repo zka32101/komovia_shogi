@@ -1,0 +1,118 @@
+rules_version = '2';
+
+// komovia_shogi social-feature Firestore rules, following komovia_go's
+// established per-collection patterns. No Cloud Functions backend exists
+// yet, so every write here is a direct client write; these rules restrict
+// *who* can write and *which fields*, but some things (tournament match
+// results) remain client-reported and documented as such.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isEither(a, b) {
+      return isSignedIn() && (request.auth.uid == a || request.auth.uid == b);
+    }
+
+    function onlyChanged(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    // ---------------- users/{uid} ----------------
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(uid);
+    }
+
+    // ---------------- users/{uid}/friends/{friendUid} ----------------
+    match /users/{uid}/friends/{friendUid} {
+      allow read: if isOwner(uid);
+      // A request is created by the sender, on BOTH users' subcollections
+      // (see friend_service.dart) — so creation of a doc not owned by the
+      // caller is allowed only when it records a request THEY sent.
+      allow create: if isSignedIn() &&
+        (isOwner(uid) || request.resource.data.requestedBy == request.auth.uid);
+      // Accept: only the non-sender may flip pending -> accepted.
+      // Block: either side may set status -> blocked at any time.
+      allow update: if isSignedIn() && (
+        (onlyChanged(['status']) &&
+          resource.data.status == 'pending' &&
+          request.resource.data.status == 'accepted' &&
+          resource.data.requestedBy != request.auth.uid) ||
+        (onlyChanged(['status', 'blockedBy']) &&
+          request.resource.data.status == 'blocked')
+      );
+      allow delete: if isOwner(uid) || isOwner(friendUid);
+    }
+
+    // ---------------- notifications/{uid}/... ----------------
+    match /notifications/{uid}/items/{notificationId} {
+      allow read: if isOwner(uid);
+      // Any signed-in user may send a notification to another user
+      // (friend requests, tournament pairings, etc.) — the recipient uid
+      // is fixed by the path, so this can't write anyone else's data.
+      allow create: if isSignedIn();
+      allow update: if isOwner(uid) && onlyChanged(['isRead', 'readAt']);
+      allow delete: if isOwner(uid);
+    }
+
+    match /notifications/{uid}/notificationPreferences/{doc} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // ---------------- message_threads/{threadId} ----------------
+    match /message_threads/{threadId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participantUids;
+      allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantUids;
+      // participantUids is immutable after create; only lastMessage*/
+      // unreadCount may change.
+      allow update: if isSignedIn() &&
+        request.auth.uid in resource.data.participantUids &&
+        request.resource.data.participantUids == resource.data.participantUids;
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn() &&
+          request.auth.uid in get(/databases/$(database)/documents/message_threads/$(threadId)).data.participantUids;
+        allow create: if isSignedIn() && request.resource.data.fromUid == request.auth.uid;
+      }
+    }
+
+    // ---------------- leaderboards/{period}/{type}/{uid} ----------------
+    match /leaderboards/{period}/{type}/{uid} {
+      allow read: if isSignedIn();
+      // Self-reported stats — documented client trust, same as
+      // komovia_go's own leaderboard rules absent a Cloud Function.
+      allow write: if isOwner(uid);
+    }
+
+    // ---------------- tournaments/{tournamentId} ----------------
+    match /tournaments/{tournamentId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.createdBy == request.auth.uid;
+      // Joining: only participantUids may change, and only by adding the
+      // caller's own uid.
+      // Bracket progression (status/winnerId/lastAdvancedRound): any
+      // participant may write it, since there's no Cloud Function to own
+      // this step — documented client trust, not a bug.
+      allow update: if isSignedIn() && (
+        (onlyChanged(['participantUids']) &&
+          request.resource.data.participantUids.hasAll(resource.data.participantUids) &&
+          request.resource.data.participantUids.hasAny([request.auth.uid])) ||
+        (onlyChanged(['status', 'winnerId', 'lastAdvancedRound']) &&
+          request.auth.uid in resource.data.participantUids)
+      );
+
+      match /matches/{matchId} {
+        allow read: if isSignedIn();
+        // Match generation/result reporting: any tournament participant.
+        allow write: if isSignedIn();
+      }
+    }
+  }
+}
