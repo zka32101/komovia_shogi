@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:komovia_core/komovia_core.dart';
 import 'package:komovia_shogi/komovia_shogi.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'firebase_options.dart';
 import 'viewmodels/index.dart';
@@ -97,6 +98,8 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
   List<Square> _hints = const [];
   bool _aiThinking = false;
   String _status = '';
+  int _moveCount = 0;
+  GameResult _result = GameResult.ongoing;
 
   @override
   void initState() {
@@ -145,6 +148,7 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
     setState(() {
       _position = _game.apply(_position, move);
       _lastMove = move;
+      _moveCount++;
     });
     _checkResultOrLetAiMove();
   }
@@ -152,7 +156,10 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
   Future<void> _checkResultOrLetAiMove() async {
     final result = _game.result(_position);
     if (!result.isOngoing) {
-      setState(() => _status = _describeResult(result));
+      setState(() {
+        _status = _describeResult(result);
+        _result = result;
+      });
       return;
     }
     if (_position.sideToMove == _humanSide) return;
@@ -189,7 +196,33 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
       _selected = null;
       _hints = const [];
       _status = '';
+      _moveCount = 0;
+      _result = GameResult.ongoing;
     });
+  }
+
+  /// Shares the just-finished game's result as an SNS-ready caption via
+  /// the OS share sheet, built through komovia_core's ShareableMoment so
+  /// it matches the same caption shape the other Komovia apps use.
+  Future<void> _shareResult() async {
+    final won = _result.winner == _humanSide;
+    final isDraw = _result.kind == ResultKind.draw;
+    final headline = switch ((won, isDraw)) {
+      (_, true) => '引き分けでした！',
+      (true, false) => '勝ちました！',
+      (false, false) => '惜しくも敗戦…',
+    };
+
+    await Share.share(
+      buildShareCaption(
+        ShareableMoment(
+          appName: 'Komovia将棋',
+          headline: headline,
+          statLines: ['手数: $_moveCount手'],
+          hashtag: '#Komovia将棋',
+        ),
+      ),
+    );
   }
 
   @override
@@ -210,6 +243,14 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
                 _status.isEmpty ? '先手（あなた）の番です' : _status,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
+              if (!_result.isOngoing) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _shareResult,
+                  icon: const Icon(Icons.share),
+                  label: const Text('SNSでシェア'),
+                ),
+              ],
               const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.all(16),
