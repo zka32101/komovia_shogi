@@ -140,6 +140,14 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
   GameResult _result = GameResult.ongoing;
   ShogiDifficulty _difficulty = ShogiDifficulty.medium;
 
+  // 「待った」用の局面履歴。手を打つたびに「打つ前」の局面を積んでおき、
+  // undoではその局面に直接戻す（chess/goのように手リストから再生するの
+  // ではなく、局面そのものを保存している — ShogiPositionは不変なので
+  // 安全に共有できる）。
+  final List<ShogiPosition> _positionHistory = [];
+
+  bool get _canUndo => _positionHistory.isNotEmpty && !_aiThinking;
+
   @override
   void initState() {
     super.initState();
@@ -227,11 +235,31 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
 
   void _applyMove(Move move) {
     setState(() {
+      _positionHistory.add(_position);
       _position = _game.apply(_position, move);
       _lastMove = move;
       _moveCount++;
     });
     _checkResultOrLetAiMove();
+  }
+
+  /// 直前の自分の手（とそれに対するAIの応手があれば、それも）を取り消す。
+  /// 人間の手番に戻るまで局面履歴を遡る — 通常は2手（自分の手+AIの応手）
+  /// だが、その手で終局していた場合は1手だけ遡れば人間の手番に戻る。
+  void _undo() {
+    if (!_canUndo) return;
+    setState(() {
+      while (_positionHistory.isNotEmpty) {
+        _position = _positionHistory.removeLast();
+        _moveCount--;
+        if (_position.sideToMove == _humanSide) break;
+      }
+      _lastMove = null;
+      _selected = null;
+      _hints = const [];
+      _status = '';
+      _result = _game.result(_position);
+    });
   }
 
   Future<void> _checkResultOrLetAiMove() async {
@@ -279,6 +307,7 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
       _status = '';
       _moveCount = 0;
       _result = GameResult.ongoing;
+      _positionHistory.clear();
     });
   }
 
@@ -317,6 +346,11 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
             icon: const Icon(Icons.tune),
             tooltip: 'AIの強さ（現在: ${_difficulty.displayName}）',
           ),
+          IconButton(
+            onPressed: _canUndo ? _undo : null,
+            icon: const Icon(Icons.undo),
+            tooltip: '待った',
+          ),
           IconButton(onPressed: _newGame, icon: const Icon(Icons.refresh)),
         ],
       ),
@@ -344,6 +378,7 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
                   builder: (context, constraints) {
                     final boardSize = constraints.maxWidth.clamp(0, 400).toDouble();
                     return GestureDetector(
+                      key: const Key('shogi_board_gesture_detector'),
                       onTapUp: (details) {
                         final square = _renderer.squareAt(
                           BoardOffset(
