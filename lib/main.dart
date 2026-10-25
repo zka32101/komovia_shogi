@@ -317,12 +317,49 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
     switch (result.kind) {
       case ResultKind.win:
         final winner = result.winner == Side.first ? '先手' : '後手';
-        return '$winner勝ち';
+        final suffix = result.reason == WinReason.resignation ? '（投了）' : '';
+        return '$winner勝ち$suffix';
       case ResultKind.draw:
         return '引き分け';
       case ResultKind.ongoing:
         return '';
     }
+  }
+
+  bool get _canResign => !_aiThinking && _result.isOngoing;
+
+  /// 投了する。[_game.apply]はResignMoveの合法性チェックを行わない
+  /// （komovia_coreのドキュメント通り、手番に関係なく常に可能）ので、
+  /// AIの応手が進行中（_aiThinking）の間はボタン自体を無効化し、
+  /// 非同期のAI応手と投了が競合して結果を上書きし合わないようにする。
+  Future<void> _confirmResign() async {
+    if (!_canResign) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('投了しますか？'),
+        content: const Text('投了すると、この対局はあなたの負けとして終了します。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('投了する'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted || !_canResign) return;
+    setState(() {
+      _position = _game.apply(_position, ResignMove(_humanSide));
+      final result = _game.result(_position);
+      _result = result;
+      _status = _describeResult(result);
+      _selected = null;
+      _hints = const [];
+    });
   }
 
   void _newGame() {
@@ -388,6 +425,11 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
                   )
                 : const Icon(Icons.lightbulb_outline),
             tooltip: 'ヒント',
+          ),
+          IconButton(
+            onPressed: _canResign ? _confirmResign : null,
+            icon: const Icon(Icons.flag),
+            tooltip: '投了',
           ),
           IconButton(onPressed: _newGame, icon: const Icon(Icons.refresh)),
         ],
