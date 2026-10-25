@@ -148,6 +148,14 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
 
   bool get _canUndo => _positionHistory.isNotEmpty && !_aiThinking;
 
+  bool _hintLoading = false;
+
+  bool get _canRequestHint =>
+      !_aiThinking &&
+      !_hintLoading &&
+      _result.isOngoing &&
+      _position.sideToMove == _humanSide;
+
   @override
   void initState() {
     super.initState();
@@ -262,6 +270,25 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
     });
   }
 
+  /// 次の一手のヒントを示す。現在選択中の差し手の強さ(_difficulty)とは
+  /// 独立に、常に`ShogiDifficulty.hard`相当の深さで読んで提案する —
+  /// 弱いAIを選んでいても、ヒント自体は手加減しない本気の一手にする。
+  /// 提案手は通常の「駒を選択して行き先をハイライト」と同じ見た目
+  /// （_selected/_hints）で示すため、そのままタップして着手できる。
+  Future<void> _showHint() async {
+    if (!_canRequestHint) return;
+    setState(() => _hintLoading = true);
+    final move = await _engine.bestMove(_position, level: ShogiDifficulty.hard.depth);
+    if (!mounted) return;
+    setState(() {
+      _hintLoading = false;
+      if (move is BoardMove) {
+        _selected = move.from;
+        _hints = [move.to];
+      }
+    });
+  }
+
   Future<void> _checkResultOrLetAiMove() async {
     final result = _game.result(_position);
     if (!result.isOngoing) {
@@ -350,6 +377,17 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
             onPressed: _canUndo ? _undo : null,
             icon: const Icon(Icons.undo),
             tooltip: '待った',
+          ),
+          IconButton(
+            onPressed: _canRequestHint ? _showHint : null,
+            icon: _hintLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.lightbulb_outline),
+            tooltip: 'ヒント',
           ),
           IconButton(onPressed: _newGame, icon: const Icon(Icons.refresh)),
         ],
