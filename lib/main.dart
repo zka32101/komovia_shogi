@@ -80,6 +80,44 @@ class _RootScreenState extends ConsumerState<_RootScreen> {
   }
 }
 
+/// AI strength from weak (for beginners) to reasonably strong - deliberately
+/// not the engine's absolute strongest, since `AI.bestMove`'s plain
+/// alpha-beta without any time budget gets slow well before that on a
+/// mobile CPU. [depth] is passed straight through to `ShogiEngine.
+/// bestMove`'s `level` parameter, which `ai_isolate_worker.dart` forwards
+/// unchanged to `logic.dart`'s `AI.bestMove(..., depth)` - depth 0 there
+/// means "shuffle legal moves and pick one", not a shallow search, so it's
+/// the only level genuinely weak enough for an absolute beginner.
+enum ShogiDifficulty {
+  beginner,
+  easy,
+  medium,
+  hard,
+}
+
+extension ShogiDifficultyExt on ShogiDifficulty {
+  int get depth => switch (this) {
+        ShogiDifficulty.beginner => 0,
+        ShogiDifficulty.easy => 1,
+        ShogiDifficulty.medium => 3,
+        ShogiDifficulty.hard => 5,
+      };
+
+  String get displayName => switch (this) {
+        ShogiDifficulty.beginner => '初心者向け',
+        ShogiDifficulty.easy => 'やさしい',
+        ShogiDifficulty.medium => 'ふつう',
+        ShogiDifficulty.hard => '強い',
+      };
+
+  String get description => switch (this) {
+        ShogiDifficulty.beginner => 'ランダムに近い手。将棋を始めたばかりの方向け。',
+        ShogiDifficulty.easy => '簡単な読みのみ。油断すると負けることもあります。',
+        ShogiDifficulty.medium => '基本的な戦術を踏まえて指します。',
+        ShogiDifficulty.hard => 'しっかり読んで指します。手応えのある相手です。',
+      };
+}
+
 class ShogiGameScreen extends StatefulWidget {
   const ShogiGameScreen({super.key});
 
@@ -100,11 +138,54 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
   String _status = '';
   int _moveCount = 0;
   GameResult _result = GameResult.ongoing;
+  ShogiDifficulty _difficulty = ShogiDifficulty.medium;
 
   @override
   void initState() {
     super.initState();
     _position = _game.initialPosition();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _pickDifficulty(restartGame: false);
+    });
+  }
+
+  /// Shows the AI-strength picker. Called once on first load (before the
+  /// very first game, so the player always chooses before playing rather
+  /// than discovering the fixed level by trial and error) and again from
+  /// the app bar's tune icon at any point - picking there restarts the
+  /// game with the newly-selected level, since mid-game strength changes
+  /// would be confusing.
+  Future<void> _pickDifficulty({bool restartGame = true}) async {
+    final selected = await showDialog<ShogiDifficulty>(
+      context: context,
+      barrierDismissible: !restartGame,
+      builder: (context) => SimpleDialog(
+        title: const Text('AIの強さを選んでください'),
+        children: ShogiDifficulty.values
+            .map(
+              (d) => SimpleDialogOption(
+                onPressed: () => Navigator.of(context).pop(d),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        d.displayName,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(d.description, style: const TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+    if (selected == null || !mounted) return;
+    setState(() => _difficulty = selected);
+    if (restartGame) _newGame();
   }
 
   Side get _humanSide => Side.first;
@@ -168,7 +249,7 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
       _aiThinking = true;
       _status = 'AI考慮中…';
     });
-    final move = await _engine.bestMove(_position, level: 2);
+    final move = await _engine.bestMove(_position, level: _difficulty.depth);
     if (!mounted) return;
     setState(() {
       _aiThinking = false;
@@ -231,6 +312,11 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
       appBar: AppBar(
         title: const Text('Komovia Shogi'),
         actions: [
+          IconButton(
+            onPressed: _pickDifficulty,
+            icon: const Icon(Icons.tune),
+            tooltip: 'AIの強さ（現在: ${_difficulty.displayName}）',
+          ),
           IconButton(onPressed: _newGame, icon: const Icon(Icons.refresh)),
         ],
       ),
