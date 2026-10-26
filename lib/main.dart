@@ -141,15 +141,20 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
   /// game with the newly-selected level, since mid-game strength changes
   /// would be confusing.
   Future<void> _pickDifficulty({bool restartGame = true}) async {
+    var quick = ref.read(shogiQuickGameProvider);
     final selected = await showDialog<ShogiDifficulty>(
       context: context,
       barrierDismissible: !restartGame,
-      builder: (context) => SimpleDialog(
-        title: const Text('AIの強さを選んでください'),
-        children: ShogiDifficulty.values
-            .map(
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => SimpleDialog(
+          title: const Text('AIの強さを選んでください'),
+          children: [
+            ...ShogiDifficulty.values.map(
               (d) => SimpleDialogOption(
-                onPressed: () => Navigator.of(context).pop(d),
+                onPressed: () {
+                  ref.read(shogiQuickGameProvider.notifier).state = quick;
+                  Navigator.of(context).pop(d);
+                },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Column(
@@ -164,8 +169,18 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
                   ),
                 ),
               ),
-            )
-            .toList(),
+            ),
+            const Divider(),
+            CheckboxListTile(
+              value: quick,
+              onChanged: (value) =>
+                  setDialogState(() => quick = value ?? false),
+              title: const Text('クイック対局'),
+              subtitle: const Text('AIの考慮時間を短くし、短時間で一局を終えられるようにします。'),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+          ],
+        ),
       ),
     );
     if (selected == null || !mounted) return;
@@ -284,7 +299,12 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
       _aiThinking = true;
       _status = 'AI考慮中…';
     });
-    final move = await _engine.bestMove(_position, level: _difficulty.depth);
+    final quick = ref.read(shogiQuickGameProvider);
+    final move = await _engine.bestMove(
+      _position,
+      level: _difficulty.depth,
+      timeBudget: quick ? _difficulty.quickTimeBudget : null,
+    );
     if (!mounted) return;
     setState(() {
       _aiThinking = false;
@@ -389,7 +409,8 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
           IconButton(
             onPressed: _pickDifficulty,
             icon: const Icon(Icons.tune),
-            tooltip: 'AIの強さ（現在: ${_difficulty.displayName}）',
+            tooltip: 'AIの強さ（現在: ${_difficulty.displayName}'
+                '${ref.watch(shogiQuickGameProvider) ? "・クイック対局" : ""}）',
           ),
           IconButton(
             onPressed: _canUndo ? _undo : null,

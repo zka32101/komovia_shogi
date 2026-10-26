@@ -49,7 +49,26 @@ extension ShogiDifficultyExt on ShogiDifficulty {
         ShogiDifficulty.medium => '基本的な戦術を踏まえて指します。',
         ShogiDifficulty.hard => 'しっかり読んで指します。手応えのある相手です。',
       };
+
+  /// クイック対局（[shogiQuickGameProvider]がtrue）のときにAIの着手探索へ
+  /// 渡す持ち時間。通常はレベルごとの探索深さ(`depth`)で強さを決めるが、
+  /// 深さが同じでも局面によって探索時間にばらつきが出るため、クイック
+  /// 対局では代わりにこの固定時間で探索を打ち切り、一局全体の所要時間を
+  /// 読みやすくする（komovia_goのクイック対局=盤面サイズ短縮に相当する、
+  /// 将棋版の「持ち時間を短くする」アプローチ）。強い設定ほど長め —
+  /// 難易度の選択自体は、クイック対局中も「読みの質」として意味を持つ。
+  Duration get quickTimeBudget => switch (this) {
+        ShogiDifficulty.beginner => const Duration(milliseconds: 200),
+        ShogiDifficulty.easy => const Duration(milliseconds: 400),
+        ShogiDifficulty.medium => const Duration(milliseconds: 600),
+        ShogiDifficulty.hard => const Duration(milliseconds: 1000),
+      };
 }
+
+/// クイック対局モード。trueの間、AIの着手探索は[ShogiDifficultyExt.depth]
+/// ではなく[ShogiDifficultyExt.quickTimeBudget]で打ち切られる
+/// （ヒント機能は対象外 — ヒントは常に本気の一手を求める）。
+final shogiQuickGameProvider = StateProvider<bool>((ref) => false);
 
 final shogiGameProvider = Provider<ShogiGame>((ref) => ShogiGame());
 final shogiEngineProvider = Provider<ShogiEngine>((ref) => ShogiEngine());
