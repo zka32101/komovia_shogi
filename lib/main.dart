@@ -80,75 +80,39 @@ class _RootScreenState extends ConsumerState<_RootScreen> {
   }
 }
 
-/// AI strength from weak (for beginners) to reasonably strong - deliberately
-/// not the engine's absolute strongest, since `AI.bestMove`'s plain
-/// alpha-beta without any time budget gets slow well before that on a
-/// mobile CPU. [depth] is passed straight through to `ShogiEngine.
-/// bestMove`'s `level` parameter, which `ai_isolate_worker.dart` forwards
-/// unchanged to `logic.dart`'s `AI.bestMove(..., depth)` - depth 0 there
-/// means "shuffle legal moves and pick one", not a shallow search, so it's
-/// the only level genuinely weak enough for an absolute beginner.
-enum ShogiDifficulty {
-  beginner,
-  easy,
-  medium,
-  hard,
-}
-
-extension ShogiDifficultyExt on ShogiDifficulty {
-  int get depth => switch (this) {
-        ShogiDifficulty.beginner => 0,
-        ShogiDifficulty.easy => 1,
-        ShogiDifficulty.medium => 3,
-        ShogiDifficulty.hard => 5,
-      };
-
-  String get displayName => switch (this) {
-        ShogiDifficulty.beginner => '初心者向け',
-        ShogiDifficulty.easy => 'やさしい',
-        ShogiDifficulty.medium => 'ふつう',
-        ShogiDifficulty.hard => '強い',
-      };
-
-  String get description => switch (this) {
-        ShogiDifficulty.beginner => 'ランダムに近い手。将棋を始めたばかりの方向け。',
-        ShogiDifficulty.easy => '簡単な読みのみ。油断すると負けることもあります。',
-        ShogiDifficulty.medium => '基本的な戦術を踏まえて指します。',
-        ShogiDifficulty.hard => 'しっかり読んで指します。手応えのある相手です。',
-      };
-}
-
-class ShogiGameScreen extends StatefulWidget {
+class ShogiGameScreen extends ConsumerStatefulWidget {
   const ShogiGameScreen({super.key});
 
   @override
-  State<ShogiGameScreen> createState() => _ShogiGameScreenState();
+  ConsumerState<ShogiGameScreen> createState() => _ShogiGameScreenState();
 }
 
-class _ShogiGameScreenState extends State<ShogiGameScreen> {
-  final _game = ShogiGame();
-  final _engine = ShogiEngine();
+class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
   final _renderer = ShogiBoardRenderer();
 
-  late ShogiPosition _position;
-  Move? _lastMove;
   Square? _selected;
   List<Square> _hints = const [];
   bool _aiThinking = false;
   String _status = '';
-  int _moveCount = 0;
-  GameResult _result = GameResult.ongoing;
-  ShogiDifficulty _difficulty = ShogiDifficulty.medium;
 
   // 「待った」用の局面履歴。手を打つたびに「打つ前」の局面を積んでおき、
   // undoではその局面に直接戻す（chess/goのように手リストから再生するの
   // ではなく、局面そのものを保存している — ShogiPositionは不変なので
-  // 安全に共有できる）。
+  // 安全に共有できる）。画面を離れると失われる対話専用の状態なので、
+  // 再開・保存の対象であるshogi_game_provider.dartの状態とは別に、
+  // ここではウィジェットローカルなまま保持している。
   final List<ShogiPosition> _positionHistory = [];
 
   bool get _canUndo => _positionHistory.isNotEmpty && !_aiThinking;
 
   bool _hintLoading = false;
+
+  ShogiGame get _game => ref.read(shogiGameProvider);
+  ShogiEngine get _engine => ref.read(shogiEngineProvider);
+  ShogiPosition get _position => ref.read(shogiPositionProvider);
+  GameResult get _result => ref.read(shogiResultProvider);
+  ShogiDifficulty get _difficulty => ref.read(shogiDifficultyProvider);
+  Move? get _lastMove => ref.read(shogiLastMoveProvider);
 
   bool get _canRequestHint =>
       !_aiThinking &&
@@ -159,7 +123,6 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
   @override
   void initState() {
     super.initState();
-    _position = _game.initialPosition();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _pickDifficulty(restartGame: false);
     });
@@ -200,7 +163,7 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
       ),
     );
     if (selected == null || !mounted) return;
-    setState(() => _difficulty = selected);
+    ref.read(shogiDifficultyProvider.notifier).state = selected;
     if (restartGame) _newGame();
   }
 
@@ -242,31 +205,39 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
   }
 
   void _applyMove(Move move) {
-    setState(() {
-      _positionHistory.add(_position);
-      _position = _game.apply(_position, move);
-      _lastMove = move;
-      _moveCount++;
-    });
+    final before = _position;
+    ref.read(applyShogiMoveProvider)(move);
+    setState(() => _positionHistory.add(before));
     _checkResultOrLetAiMove();
   }
 
   /// 直前の自分の手（とそれに対するAIの応手があれば、それも）を取り消す。
   /// 人間の手番に戻るまで局面履歴を遡る — 通常は2手（自分の手+AIの応手）
   /// だが、その手で終局していた場合は1手だけ遡れば人間の手番に戻る。
+  /// 棋譜(shogiMoveHistoryProvider)も、巻き戻した手数ぶんだけ末尾を
+  /// 切り詰める — 保存対象の棋譜が実際の盤面より先に進んでしまわないように。
   void _undo() {
     if (!_canUndo) return;
-    setState(() {
-      while (_positionHistory.isNotEmpty) {
-        _position = _positionHistory.removeLast();
-        _moveCount--;
-        if (_position.sideToMove == _humanSide) break;
+    var position = _position;
+    var moveCount = ref.read(shogiMoveCountProvider);
+    var history = ref.read(shogiMoveHistoryProvider);
+    while (_positionHistory.isNotEmpty) {
+      position = _positionHistory.removeLast();
+      moveCount--;
+      if (history.isNotEmpty) {
+        history = history.sublist(0, history.length - 1);
       }
-      _lastMove = null;
+      if (position.sideToMove == _humanSide) break;
+    }
+    ref.read(shogiPositionProvider.notifier).state = position;
+    ref.read(shogiMoveCountProvider.notifier).state = moveCount;
+    ref.read(shogiMoveHistoryProvider.notifier).state = history;
+    ref.read(shogiLastMoveProvider.notifier).state = null;
+    ref.read(shogiResultProvider.notifier).state = _game.result(position);
+    setState(() {
       _selected = null;
       _hints = const [];
       _status = '';
-      _result = _game.result(_position);
     });
   }
 
@@ -278,7 +249,8 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
   Future<void> _showHint() async {
     if (!_canRequestHint) return;
     setState(() => _hintLoading = true);
-    final move = await _engine.bestMove(_position, level: ShogiDifficulty.hard.depth);
+    final move =
+        await _engine.bestMove(_position, level: ShogiDifficulty.hard.depth);
     if (!mounted) return;
     setState(() {
       _hintLoading = false;
@@ -292,10 +264,8 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
   Future<void> _checkResultOrLetAiMove() async {
     final result = _game.result(_position);
     if (!result.isOngoing) {
-      setState(() {
-        _status = _describeResult(result);
-        _result = result;
-      });
+      ref.read(shogiResultProvider.notifier).state = result;
+      setState(() => _status = _describeResult(result));
       return;
     }
     if (_position.sideToMove == _humanSide) return;
@@ -352,10 +322,11 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
       ),
     );
     if (confirmed != true || !mounted || !_canResign) return;
+    final newPosition = _game.apply(_position, ResignMove(_humanSide));
+    final result = _game.result(newPosition);
+    ref.read(shogiPositionProvider.notifier).state = newPosition;
+    ref.read(shogiResultProvider.notifier).state = result;
     setState(() {
-      _position = _game.apply(_position, ResignMove(_humanSide));
-      final result = _game.result(_position);
-      _result = result;
       _status = _describeResult(result);
       _selected = null;
       _hints = const [];
@@ -364,15 +335,12 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
 
   void _newGame() {
     setState(() {
-      _position = _game.initialPosition();
-      _lastMove = null;
       _selected = null;
       _hints = const [];
       _status = '';
-      _moveCount = 0;
-      _result = GameResult.ongoing;
       _positionHistory.clear();
     });
+    ref.read(startShogiGameProvider)();
   }
 
   /// Shares the just-finished game's result as an SNS-ready caption via
@@ -392,7 +360,7 @@ class _ShogiGameScreenState extends State<ShogiGameScreen> {
         ShareableMoment(
           appName: 'Komovia将棋',
           headline: headline,
-          statLines: ['手数: $_moveCount手'],
+          statLines: ['手数: ${ref.read(shogiMoveCountProvider)}手'],
           hashtag: '#Komovia将棋',
         ),
       ),

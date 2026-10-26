@@ -5,4 +5,5 @@ export 'direct_message_provider.dart';
 export 'friend_provider.dart';
 export 'leaderboard_provider.dart';
 export 'notification_provider.dart';
+export 'shogi_game_provider.dart';
 export 'tournament_provider.dart';
