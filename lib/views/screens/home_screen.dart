@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../viewmodels/index.dart';
 import 'friends_screen.dart';
+import 'growth_screen.dart';
 import 'leaderboard_screen.dart';
 import 'message_threads_screen.dart';
 import 'notification_screen.dart';
@@ -71,6 +72,14 @@ class HomeScreen extends ConsumerWidget {
                   onTap: onPlayShogi,
                 ),
                 const Divider(),
+                _HomeTile(
+                  icon: Icons.trending_up,
+                  title: '成長の記録 (Growth)',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const GrowthScreen()),
+                  ),
+                ),
                 _HomeTile(
                   icon: Icons.people,
                   title: 'Friends',

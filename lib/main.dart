@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -266,6 +268,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
     if (!result.isOngoing) {
       ref.read(shogiResultProvider.notifier).state = result;
       setState(() => _status = _describeResult(result));
+      unawaited(ref.read(updateShogiRatingAfterGameProvider)(result));
       return;
     }
     if (_position.sideToMove == _humanSide) return;
@@ -331,6 +334,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
       _selected = null;
       _hints = const [];
     });
+    unawaited(ref.read(updateShogiRatingAfterGameProvider)(result));
   }
 
   void _newGame() {
