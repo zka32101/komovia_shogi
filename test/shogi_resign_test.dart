@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:komovia_shogi/main.dart';
 
 /// Drives [ShogiGameScreen] through its real UI to exercise 投了
@@ -19,7 +20,7 @@ void main() {
   }
 
   testWidgets('resign button is enabled at the start of the game', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: ShogiGameScreen()));
+    await tester.pumpWidget(const ProviderScope(child: MaterialApp(home: ShogiGameScreen())));
     await dismissDifficultyPicker(tester);
 
     final resignButton = tester.widget<IconButton>(find.widgetWithIcon(IconButton, Icons.flag));
@@ -27,7 +28,7 @@ void main() {
   });
 
   testWidgets('resign button is disabled while the AI is thinking', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: ShogiGameScreen()));
+    await tester.pumpWidget(const ProviderScope(child: MaterialApp(home: ShogiGameScreen())));
     await dismissDifficultyPicker(tester);
 
     await tester.tapAt(squareCenter(tester, 0, 6));
@@ -47,7 +48,7 @@ void main() {
   testWidgets('tapping resign, confirming, ends the game as a loss for the human', (
     tester,
   ) async {
-    await tester.pumpWidget(const MaterialApp(home: ShogiGameScreen()));
+    await tester.pumpWidget(const ProviderScope(child: MaterialApp(home: ShogiGameScreen())));
     await dismissDifficultyPicker(tester);
 
     await tester.tap(find.byIcon(Icons.flag));
@@ -68,7 +69,7 @@ void main() {
   });
 
   testWidgets('canceling the resign confirmation keeps the game going', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: ShogiGameScreen()));
+    await tester.pumpWidget(const ProviderScope(child: MaterialApp(home: ShogiGameScreen())));
     await dismissDifficultyPicker(tester);
 
     await tester.tap(find.byIcon(Icons.flag));

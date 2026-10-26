@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:komovia_shogi/main.dart';
 
 /// Drives [ShogiGameScreen] through its real UI to exercise the "ヒント"
@@ -19,7 +20,7 @@ void main() {
   }
 
   testWidgets('hint button is enabled at the start of the game', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: ShogiGameScreen()));
+    await tester.pumpWidget(const ProviderScope(child: MaterialApp(home: ShogiGameScreen())));
     await dismissDifficultyPicker(tester);
 
     final hintButton = tester.widget<IconButton>(
@@ -29,7 +30,7 @@ void main() {
   });
 
   testWidgets('hint button is disabled while the AI is thinking', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: ShogiGameScreen()));
+    await tester.pumpWidget(const ProviderScope(child: MaterialApp(home: ShogiGameScreen())));
     await dismissDifficultyPicker(tester);
 
     await tester.tapAt(squareCenter(tester, 0, 6));
@@ -52,7 +53,7 @@ void main() {
   testWidgets('tapping hint computes a real suggestion and re-enables the button', (
     tester,
   ) async {
-    await tester.pumpWidget(const MaterialApp(home: ShogiGameScreen()));
+    await tester.pumpWidget(const ProviderScope(child: MaterialApp(home: ShogiGameScreen())));
     await dismissDifficultyPicker(tester);
 
     await tester.tap(find.byIcon(Icons.lightbulb_outline));
