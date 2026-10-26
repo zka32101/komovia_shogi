@@ -41,6 +41,7 @@ final persistActiveShogiGameProvider = Provider<Future<void> Function()>((
               uid: uid,
               difficultyName: ref.read(shogiDifficultyProvider).name,
               kifMoves: kif,
+              quickGame: ref.read(shogiQuickGameProvider),
             ),
           );
     } catch (_) {
@@ -109,6 +110,7 @@ final resumeShogiGameProvider = Provider<void Function(ActiveShogiGame)>((
           (d) => d.name == saved.difficultyName,
           orElse: () => ShogiDifficulty.medium,
         );
+    ref.read(shogiQuickGameProvider.notifier).state = saved.quickGame;
     ref.read(isShogiGameActiveProvider.notifier).state = true;
   };
 });

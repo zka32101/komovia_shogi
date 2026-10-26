@@ -13,6 +13,10 @@ class ActiveShogiGame {
   final String uid;
   final String difficultyName;
   final String kifMoves;
+
+  /// クイック対局（AIの着手を時間で打ち切るモード）中だったかどうか。
+  /// 再開時も同じ体験になるよう復元する。
+  final bool quickGame;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -20,6 +24,7 @@ class ActiveShogiGame {
     required this.uid,
     required this.difficultyName,
     required this.kifMoves,
+    this.quickGame = false,
     DateTime? createdAt,
     this.updatedAt,
   }) : createdAt = createdAt ?? DateTime.now();
@@ -32,6 +37,7 @@ class ActiveShogiGame {
       uid: doc.id,
       difficultyName: data['difficultyName'] as String? ?? 'medium',
       kifMoves: data['kifMoves'] as String? ?? '',
+      quickGame: data['quickGame'] as bool? ?? false,
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
@@ -45,6 +51,7 @@ class ActiveShogiGame {
     return {
       'difficultyName': difficultyName,
       'kifMoves': kifMoves,
+      'quickGame': quickGame,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt ?? DateTime.now()),
     };
