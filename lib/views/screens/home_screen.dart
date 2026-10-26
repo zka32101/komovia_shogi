@@ -66,6 +66,28 @@ class HomeScreen extends ConsumerWidget {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                // 中断・再開機能: 進行中の対局があれば「続きから」を一番上に
+                // 出す（無ければ何も表示しない）。
+                Builder(
+                  builder: (context) {
+                    final activeGame =
+                        ref.watch(activeShogiGameProvider).valueOrNull;
+                    if (activeGame == null) return const SizedBox.shrink();
+                    return Column(
+                      children: [
+                        _HomeTile(
+                          icon: Icons.play_circle_outline,
+                          title: '続きから (Resume game)',
+                          onTap: () {
+                            ref.read(resumeShogiGameProvider)(activeGame);
+                            onPlayShogi();
+                          },
+                        ),
+                        const Divider(),
+                      ],
+                    );
+                  },
+                ),
                 _HomeTile(
                   icon: Icons.sports_esports,
                   title: '将棋をプレイ (Play shogi)',

@@ -125,6 +125,10 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
   @override
   void initState() {
     super.initState();
+    // 中断・再開機能: 既に対局が進行中（再開された、または同一セッション内
+    // で前回から続いている）場合は、難易度選択ダイアログを出さずそのまま
+    // 続きの盤面を表示する。
+    if (ref.read(isShogiGameActiveProvider)) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _pickDifficulty(restartGame: false);
     });
@@ -209,6 +213,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
   void _applyMove(Move move) {
     final before = _position;
     ref.read(applyShogiMoveProvider)(move);
+    unawaited(ref.read(persistActiveShogiGameProvider)());
     setState(() => _positionHistory.add(before));
     _checkResultOrLetAiMove();
   }
@@ -241,6 +246,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
       _hints = const [];
       _status = '';
     });
+    unawaited(ref.read(persistActiveShogiGameProvider)());
   }
 
   /// 次の一手のヒントを示す。現在選択中の差し手の強さ(_difficulty)とは
@@ -269,6 +275,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
       ref.read(shogiResultProvider.notifier).state = result;
       setState(() => _status = _describeResult(result));
       unawaited(ref.read(updateShogiRatingAfterGameProvider)(result));
+      ref.read(clearActiveShogiGameProvider)();
       return;
     }
     if (_position.sideToMove == _humanSide) return;
@@ -335,6 +342,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
       _hints = const [];
     });
     unawaited(ref.read(updateShogiRatingAfterGameProvider)(result));
+    ref.read(clearActiveShogiGameProvider)();
   }
 
   void _newGame() {
@@ -345,6 +353,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
       _positionHistory.clear();
     });
     ref.read(startShogiGameProvider)();
+    unawaited(ref.read(persistActiveShogiGameProvider)());
   }
 
   /// Shares the just-finished game's result as an SNS-ready caption via
