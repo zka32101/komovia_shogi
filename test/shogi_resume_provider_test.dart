@@ -50,6 +50,15 @@ void main() {
       expect(fresh.read(shogiDifficultyProvider), ShogiDifficulty.hard);
       expect(fresh.read(isShogiGameActiveProvider), isTrue);
       expect(fresh.read(shogiLastMoveProvider), move1);
+      // Resuming must also reconstruct the position-history-key trail used
+      // for 千日手 (fourfold repetition) detection, not just the board.
+      expect(
+        fresh.read(shogiPositionHistoryKeysProvider),
+        [
+          game.positionKey(game.initialPosition()),
+          game.positionKey(afterOneMove),
+        ],
+      );
     });
 
     test(

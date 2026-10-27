@@ -95,15 +95,20 @@ final resumeShogiGameProvider = Provider<void Function(ActiveShogiGame)>((
 
     var position = game.initialPosition();
     Move? lastMove;
+    final historyKeys = <Object>[game.positionKey(position)];
     for (final recorded in record.moves) {
       position = game.apply(position, recorded.move);
       lastMove = recorded.move;
+      if (recorded.move is! ResignMove) {
+        historyKeys.add(game.positionKey(position));
+      }
     }
 
     ref.read(shogiPositionProvider.notifier).state = position;
     ref.read(shogiLastMoveProvider.notifier).state = lastMove;
     ref.read(shogiMoveCountProvider.notifier).state = record.moves.length;
     ref.read(shogiMoveHistoryProvider.notifier).state = record.moves;
+    ref.read(shogiPositionHistoryKeysProvider.notifier).state = historyKeys;
     ref.read(shogiResultProvider.notifier).state = record.result;
     ref.read(shogiDifficultyProvider.notifier).state = ShogiDifficulty.values
         .firstWhere(

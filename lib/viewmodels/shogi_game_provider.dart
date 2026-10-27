@@ -96,6 +96,26 @@ final shogiMoveCountProvider = StateProvider<int>((ref) => 0);
 /// 保存し、`ShogiGame.importRecord`で読み戻す設計を想定）。
 final shogiMoveHistoryProvider = StateProvider<List<RecordedMove>>((ref) => []);
 
+/// 対局開始からこれまでに現れた局面のキー（`ShogiGame.positionKey`、
+/// 先頭に初期局面を含む）の履歴。`ShogiGame.result`/`legalMoves`に渡すと
+/// 千日手（同一局面4回出現）を検出できる — このリストを実際に積み
+/// 続けて渡すのがこのプロバイダー層の役目（`ShogiGame`自身は純粋関数
+/// なので、履歴を覚えておく責務は持たない）。
+///
+/// デフォルト値は`[]`ではなく、[shogiPositionProvider]のデフォルト値
+/// （`initialPosition()`）に対応する局面キー1件で初期化する —
+/// `ShogiGameScreen.initState`は「中断再開ではない通常の初回対局」では
+/// `startShogiGameProvider`を一度も呼ばない（`_pickDifficulty(restartGame:
+/// false)`のまま難易度選択のみで対局開始する）ため、このデフォルト値が
+/// 実際に使われる対局開始経路になる。ここを`[]`のままにすると、その
+/// 初回対局だけ初期局面がhistoryKeysに記録されず、千日手判定が常に
+/// 1回分甘くなってしまう。
+final shogiPositionHistoryKeysProvider = StateProvider<List<Object>>((ref) {
+  return [
+    ref.read(shogiGameProvider).positionKey(ref.read(shogiPositionProvider)),
+  ];
+});
+
 /// 現在の対局結果。`GameResult.ongoing`の間は対局続行中。
 final shogiResultProvider = StateProvider<GameResult>((ref) => GameResult.ongoing);
 
@@ -114,11 +134,15 @@ final startShogiGameProvider = Provider<void Function({ShogiDifficulty? difficul
     if (difficulty != null) {
       ref.read(shogiDifficultyProvider.notifier).state = difficulty;
     }
-    ref.read(shogiPositionProvider.notifier).state =
-        ref.read(shogiGameProvider).initialPosition();
+    final game = ref.read(shogiGameProvider);
+    final initial = game.initialPosition();
+    ref.read(shogiPositionProvider.notifier).state = initial;
     ref.read(shogiLastMoveProvider.notifier).state = null;
     ref.read(shogiMoveCountProvider.notifier).state = 0;
     ref.read(shogiMoveHistoryProvider.notifier).state = [];
+    ref.read(shogiPositionHistoryKeysProvider.notifier).state = [
+      game.positionKey(initial),
+    ];
     ref.read(shogiResultProvider.notifier).state = GameResult.ongoing;
     ref.read(isShogiGameActiveProvider.notifier).state = true;
   };
@@ -138,6 +162,7 @@ final applyShogiMoveProvider = Provider<void Function(Move move)>((ref) {
     ref.read(shogiPositionProvider.notifier).state = newPosition;
     ref.read(shogiLastMoveProvider.notifier).state = move;
 
+    var historyKeys = ref.read(shogiPositionHistoryKeysProvider);
     if (move is! ResignMove) {
       final nextNumber = ref.read(shogiMoveCountProvider) + 1;
       ref.read(shogiMoveCountProvider.notifier).state = nextNumber;
@@ -145,8 +170,11 @@ final applyShogiMoveProvider = Provider<void Function(Move move)>((ref) {
         ...ref.read(shogiMoveHistoryProvider),
         RecordedMove(number: nextNumber, side: side, move: move),
       ];
+      historyKeys = [...historyKeys, game.positionKey(newPosition)];
+      ref.read(shogiPositionHistoryKeysProvider.notifier).state = historyKeys;
     }
 
-    ref.read(shogiResultProvider.notifier).state = game.result(newPosition);
+    ref.read(shogiResultProvider.notifier).state =
+        game.result(newPosition, historyKeys: historyKeys);
   };
 });
