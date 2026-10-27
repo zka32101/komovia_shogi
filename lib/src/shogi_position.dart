@@ -27,19 +27,29 @@ class ShogiPosition extends Position {
     this.resignedBy,
   });
 
+  /// [resignedBy] uses a sentinel default (not plain `Side? resignedBy`)
+  /// so `copyWith(resignedBy: null)` can actually clear a resignation —
+  /// `resignedBy ?? this.resignedBy` would silently keep the old value
+  /// instead, the same copyWith anti-pattern fixed elsewhere in the
+  /// Komovia family (see `Friendship.copyWith` in komovia_core).
   ShogiPosition copyWith({
     List<List<Piece?>>? board,
     Map<PieceType, int>? p1Hand,
     Map<PieceType, int>? p2Hand,
     Side? sideToMove,
-    Side? resignedBy,
+    Object? resignedBy = _unset,
   }) {
     return ShogiPosition(
       board: board ?? this.board,
       p1Hand: p1Hand ?? this.p1Hand,
       p2Hand: p2Hand ?? this.p2Hand,
       sideToMove: sideToMove ?? this.sideToMove,
-      resignedBy: resignedBy ?? this.resignedBy,
+      resignedBy: resignedBy == _unset ? this.resignedBy : resignedBy as Side?,
     );
   }
 }
+
+/// Sentinel used by [ShogiPosition.copyWith] to distinguish "not passed"
+/// from an explicit `null`, so [ShogiPosition.resignedBy] can actually be
+/// cleared.
+const Object _unset = Object();
