@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:komovia_shogi/main.dart';
+import 'package:komovia_shogi/viewmodels/index.dart';
 
 /// Drives [ShogiGameScreen] through its real UI (not a mock) to exercise
 /// the "待った" (undo) feature added alongside the AI-strength picker.
@@ -61,5 +62,42 @@ void main() {
       find.widgetWithIcon(IconButton, Icons.undo),
     );
     expect(undoButtonAfter.onPressed, isNull);
+  });
+
+  testWidgets(
+      'undo truncates shogiPositionHistoryKeysProvider in step with '
+      'shogiMoveCountProvider, so 千日手 counting stays correct afterward',
+      (tester) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: ShogiGameScreen()),
+      ),
+    );
+    await dismissDifficultyPicker(tester);
+
+    await tester.tapAt(squareCenter(tester, 0, 6));
+    await tester.pump();
+    await tester.tapAt(squareCenter(tester, 0, 5));
+    await tester.pump();
+    await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 500)));
+    await tester.pump();
+    await tester.pump();
+
+    // One human move + one AI reply = moveCount 2, so historyKeys holds
+    // the initial position plus one entry per move = length 3.
+    expect(container.read(shogiMoveCountProvider), 2);
+    expect(container.read(shogiPositionHistoryKeysProvider), hasLength(3));
+
+    await tester.tap(find.widgetWithIcon(IconButton, Icons.undo));
+    await tester.pump();
+
+    // Undo reverts both plies back to the human's turn: moveCount 0,
+    // historyKeys back down to just the initial position.
+    expect(container.read(shogiMoveCountProvider), 0);
+    expect(container.read(shogiPositionHistoryKeysProvider), hasLength(1));
   });
 }

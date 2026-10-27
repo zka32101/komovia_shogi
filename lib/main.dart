@@ -115,6 +115,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
   GameResult get _result => ref.read(shogiResultProvider);
   ShogiDifficulty get _difficulty => ref.read(shogiDifficultyProvider);
   Move? get _lastMove => ref.read(shogiLastMoveProvider);
+  List<Object> get _historyKeys => ref.read(shogiPositionHistoryKeysProvider);
 
   bool get _canRequestHint =>
       !_aiThinking &&
@@ -193,7 +194,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
   void _onTapSquare(Square square) {
     if (_aiThinking || _position.sideToMove != _humanSide) return;
 
-    final legal = _game.legalMoves(_position);
+    final legal = _game.legalMoves(_position, historyKeys: _historyKeys);
     if (_selected == null) {
       final movesFromHere = legal
           .whereType<BoardMove>()
@@ -243,19 +244,27 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
     var position = _position;
     var moveCount = ref.read(shogiMoveCountProvider);
     var history = ref.read(shogiMoveHistoryProvider);
+    var historyKeys = ref.read(shogiPositionHistoryKeysProvider);
     while (_positionHistory.isNotEmpty) {
       position = _positionHistory.removeLast();
       moveCount--;
       if (history.isNotEmpty) {
         history = history.sublist(0, history.length - 1);
       }
+      // historyKeysは常に「初期局面+これまでの着手数」ぶんの長さを保つ
+      // （historyKeys[0]が初期局面）ので、1手戻すたびに末尾を1つ切り詰める。
+      if (historyKeys.length > 1) {
+        historyKeys = historyKeys.sublist(0, historyKeys.length - 1);
+      }
       if (position.sideToMove == _humanSide) break;
     }
     ref.read(shogiPositionProvider.notifier).state = position;
     ref.read(shogiMoveCountProvider.notifier).state = moveCount;
     ref.read(shogiMoveHistoryProvider.notifier).state = history;
+    ref.read(shogiPositionHistoryKeysProvider.notifier).state = historyKeys;
     ref.read(shogiLastMoveProvider.notifier).state = null;
-    ref.read(shogiResultProvider.notifier).state = _game.result(position);
+    ref.read(shogiResultProvider.notifier).state =
+        _game.result(position, historyKeys: historyKeys);
     setState(() {
       _selected = null;
       _hints = const [];
@@ -285,7 +294,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
   }
 
   Future<void> _checkResultOrLetAiMove() async {
-    final result = _game.result(_position);
+    final result = _game.result(_position, historyKeys: _historyKeys);
     if (!result.isOngoing) {
       ref.read(shogiResultProvider.notifier).state = result;
       setState(() => _status = _describeResult(result));
