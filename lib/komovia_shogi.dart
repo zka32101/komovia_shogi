@@ -8,6 +8,7 @@
 /// background, an advantage overlay).
 library;
 
+export 'src/onboarding_demo.dart';
 export 'src/shogi_board_renderer.dart';
 export 'src/shogi_engine.dart';
 export 'src/shogi_game.dart';

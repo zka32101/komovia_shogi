@@ -11,6 +11,7 @@ import 'package:share_plus/share_plus.dart';
 import 'firebase_options.dart';
 import 'viewmodels/index.dart';
 import 'views/screens/home_screen.dart';
+import 'views/screens/onboarding_screen.dart';
 
 /// komovia_shogi: the shogi AI対局 demo screen (`ShogiGameScreen`, exercising
 /// `ShogiGame`/`ShogiEngine`/`ShogiBoardRenderer` end to end) plus a social
@@ -22,7 +23,8 @@ import 'views/screens/home_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
   } catch (_) {
     // Placeholder Firebase config won't actually initialize against a real
     // backend; swallow so the shogi demo screen still runs standalone.
@@ -37,7 +39,8 @@ class KomoviaShogiApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Komovia Shogi',
-      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown)),
+      theme:
+          ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown)),
       home: const _RootScreen(),
     );
   }
@@ -72,12 +75,31 @@ class _RootScreenState extends ConsumerState<_RootScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return HomeScreen(
-      onPlayShogi: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const ShogiGameScreen()),
-        );
-      },
+    final hasCompletedOnboarding = ref.watch(hasCompletedOnboardingProvider);
+
+    return hasCompletedOnboarding.when(
+      data: (completed) => completed
+          ? HomeScreen(onPlayShogi: () => _pushGame(context))
+          : OnboardingScreen(onFinished: () => _pushGame(context)),
+      // ローディング中は空白のまま待つ（スプラッシュ代わり） — 判定が
+      // 一瞬で終わるローカルSharedPreferences読み込みなので、専用の
+      // スプラッシュ画面を出すほどの長さにはならない。
+      loading: () => const Scaffold(body: SizedBox.shrink()),
+      // ローカル読み込みが万一失敗しても、オンボーディング未完了として
+      // 安全側に倒す（ホーム画面に進めなくなるよりはまし）。
+      error: (_, __) => OnboardingScreen(onFinished: () => _pushGame(context)),
+    );
+  }
+
+  /// `_RootScreen`自体は常にナビゲーションスタックの一番下（唯一のroute）
+  /// にとどまる — `OnboardingScreen`/`HomeScreen`はpushされた別routeでは
+  /// なく、このウィジェットのbuild()が条件分岐で出し分けているだけなので、
+  /// ここでの`push`は常に素直に「その上にもう1枚積む」だけでよい
+  /// （オンボーディング直後でも、戻るボタンを押せばその時点で既に
+  /// `completeOnboardingProvider`済みの`_RootScreen`＝HomeScreenに戻る）。
+  void _pushGame(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ShogiGameScreen()),
     );
   }
 }
@@ -196,10 +218,8 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
 
     final legal = _game.legalMoves(_position, historyKeys: _historyKeys);
     if (_selected == null) {
-      final movesFromHere = legal
-          .whereType<BoardMove>()
-          .where((m) => m.from == square)
-          .toList();
+      final movesFromHere =
+          legal.whereType<BoardMove>().where((m) => m.from == square).toList();
       if (movesFromHere.isNotEmpty) {
         setState(() {
           _selected = square;
@@ -446,59 +466,73 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
         ],
       ),
       body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                _status.isEmpty ? '先手（あなた）の番です' : _status,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              if (!_result.isOngoing) ...[
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _shareResult,
-                  icon: const Icon(Icons.share),
-                  label: const Text('SNSでシェア'),
+        // SingleChildScrollView + mainAxisSize.min: 持ち駒バーが増えて
+        // 盤の実高さが伸びても（多種類の持ち駒がWrapで2段になった場合
+        // など）、画面の高さを超えた分はスクロールで吸収する（固定高の
+        // 親に収めようとするとoverflowし得るため、根本的にスクロール
+        // 可能にしておく）。
+        child: SingleChildScrollView(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _status.isEmpty ? '先手（あなた）の番です' : _status,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                if (!_result.isOngoing) ...[
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: _shareResult,
+                    icon: const Icon(Icons.share),
+                    label: const Text('SNSでシェア'),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final boardSize =
+                          constraints.maxWidth.clamp(0, 400).toDouble();
+                      return GestureDetector(
+                        key: const Key('shogi_board_gesture_detector'),
+                        onTapUp: (details) {
+                          final square = _renderer.squareAt(
+                            BoardOffset(
+                              details.localPosition.dx,
+                              details.localPosition.dy,
+                            ),
+                            BoardSize(boardSize, boardSize),
+                            _position,
+                          );
+                          if (square != null) _onTapSquare(square);
+                        },
+                        child: SizedBox(
+                          // 高さは固定しない: 持ち駒がある間は`MiniBoardWidget`
+                          // が盤の上下に持ち駒バーを足すため、盤サイズと同じ
+                          // 固定高にすると実戦で駒を取った瞬間に確実に
+                          // RenderFlexオーバーフローする（本バグはオンボー
+                          // ディング画面の実装中に発見・修正）。
+                          width: boardSize,
+                          child: _renderer.build(
+                            _position,
+                            lastMove: _lastMove,
+                            hints: _hints,
+                            selected: _selected,
+                            textured: true,
+                            advantageRatio:
+                                ShogiBoardRenderer.materialAdvantageRatio(
+                                    _position),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ],
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final boardSize = constraints.maxWidth.clamp(0, 400).toDouble();
-                    return GestureDetector(
-                      key: const Key('shogi_board_gesture_detector'),
-                      onTapUp: (details) {
-                        final square = _renderer.squareAt(
-                          BoardOffset(
-                            details.localPosition.dx,
-                            details.localPosition.dy,
-                          ),
-                          BoardSize(boardSize, boardSize),
-                          _position,
-                        );
-                        if (square != null) _onTapSquare(square);
-                      },
-                      child: SizedBox(
-                        width: boardSize,
-                        height: boardSize,
-                        child: _renderer.build(
-                          _position,
-                          lastMove: _lastMove,
-                          hints: _hints,
-                          selected: _selected,
-                          textured: true,
-                          advantageRatio:
-                              ShogiBoardRenderer.materialAdvantageRatio(_position),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
