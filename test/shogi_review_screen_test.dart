@@ -28,7 +28,15 @@ void main() {
     await tester.tap(find.widgetWithIcon(IconButton, Icons.flag));
     await tester.pumpAndSettle();
     await tester.tap(find.text('投了する'));
-    await tester.pumpAndSettle();
+    // 終局時に自動で動く正確度計算（CircularProgressIndicator）が常時
+    // アニメーションするため、pumpAndSettleはここでは使えない — ダイアログの
+    // pop遷移を複数回のpumpで進め、計算完了はrunAsyncで実際に待つ
+    // （shogi_resign_test.dartと同じ回避パターン）。
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
+    await tester.pump();
 
     expect(find.text('感想戦'), findsOneWidget);
     expect(find.text('SNSでシェア'), findsOneWidget);
