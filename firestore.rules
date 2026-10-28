@@ -134,5 +134,18 @@ service cloud.firestore {
         onlyChanged(['gameId']);
       allow delete: if false;
     }
+
+    // ---------------- shogi_pvp_games/{gameId} ----------------
+    match /shogi_pvp_games/{gameId} {
+      allow read: if isEither(resource.data.senteUid, resource.data.goteUid);
+      allow create: if isSignedIn() &&
+        (request.auth.uid == request.resource.data.senteUid ||
+         request.auth.uid == request.resource.data.goteUid);
+      // ShogiPvpGameService.applyMove/resign: either participant may
+      // update kifMoves/isSenteTurn/movesCount/status/winnerUid/result.
+      allow update: if isEither(resource.data.senteUid, resource.data.goteUid) &&
+        onlyChanged(['kifMoves', 'isSenteTurn', 'movesCount', 'status', 'winnerUid', 'result', 'updatedAt']);
+      allow delete: if false;
+    }
   }
 }
