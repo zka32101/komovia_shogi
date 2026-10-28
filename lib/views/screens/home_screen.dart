@@ -7,6 +7,7 @@ import 'growth_screen.dart';
 import 'leaderboard_screen.dart';
 import 'message_threads_screen.dart';
 import 'notification_screen.dart';
+import 'shogi_matching_screen.dart';
 import 'tournament_screen.dart';
 
 /// Minimal hub screen linking the shogi game-engine demo (from the
@@ -94,6 +95,19 @@ class HomeScreen extends ConsumerWidget {
                   onTap: onPlayShogi,
                 ),
                 const Divider(),
+                _HomeTile(
+                  icon: Icons.group,
+                  title: '対局相手を探す (PvP matching)',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ShogiMatchingScreen(
+                        uid: uid,
+                        displayName: displayName,
+                      ),
+                    ),
+                  ),
+                ),
                 _HomeTile(
                   icon: Icons.trending_up,
                   title: '成長の記録 (Growth)',
