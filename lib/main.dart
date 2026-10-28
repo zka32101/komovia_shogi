@@ -12,6 +12,7 @@ import 'firebase_options.dart';
 import 'viewmodels/index.dart';
 import 'views/screens/home_screen.dart';
 import 'views/screens/onboarding_screen.dart';
+import 'views/screens/shogi_review_screen.dart';
 
 /// komovia_shogi: the shogi AI対局 demo screen (`ShogiGameScreen`, exercising
 /// `ShogiGame`/`ShogiEngine`/`ShogiBoardRenderer` end to end) plus a social
@@ -483,10 +484,26 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
                 ),
                 if (!_result.isOngoing) ...[
                   const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: _shareResult,
-                    icon: const Icon(Icons.share),
-                    label: const Text('SNSでシェア'),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: _shareResult,
+                        icon: const Icon(Icons.share),
+                        label: const Text('SNSでシェア'),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ShogiReviewScreen(),
+                          ),
+                        ),
+                        icon: const Icon(Icons.insights),
+                        label: const Text('感想戦'),
+                      ),
+                    ],
                   ),
                 ],
                 const SizedBox(height: 12),
