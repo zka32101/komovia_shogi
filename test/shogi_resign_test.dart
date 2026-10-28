@@ -56,7 +56,13 @@ void main() {
 
     expect(find.text('投了しますか？'), findsOneWidget);
     await tester.tap(find.text('投了する'));
-    await tester.pumpAndSettle();
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    // 終局時に自動で動く正確度計算（CircularProgressIndicator）が常時
+    // アニメーションするため、pumpAndSettleはここでは使えない。
+    await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
+    await tester.pump();
 
     // 先手（human）resigned, so 後手 (the AI) is declared the winner.
     expect(find.textContaining('後手勝ち'), findsOneWidget);

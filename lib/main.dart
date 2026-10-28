@@ -120,6 +120,15 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
   bool _aiThinking = false;
   String _status = '';
 
+  // 「正確さ訴求」: 終局後、感想戦ボタンを押す前から「あなたの正確度」を
+  // 自動で計算して表示する — komovia_coreのReviewEngine(ChessAnalysisService
+  // を一般化したもの)がすでに持っているaccuracyFor(Side)を、感想戦という
+  // 追加の一手間の裏に隠したままにせず、対局直後の一番目立つ場所で見せる
+  // ことで、「AIが本当にコーチしてくれる」という価値を具体的な数字として
+  // 即座に体感できるようにする。
+  GameAnalysis? _accuracyAnalysis;
+  bool _accuracyLoading = false;
+
   // 「待った」用の局面履歴。手を打つたびに「打つ前」の局面を積んでおき、
   // undoではその局面に直接戻す（chess/goのように手リストから再生するの
   // ではなく、局面そのものを保存している — ShogiPositionは不変なので
@@ -321,6 +330,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
       setState(() => _status = _describeResult(result));
       unawaited(ref.read(updateShogiRatingAfterGameProvider)(result));
       ref.read(clearActiveShogiGameProvider)();
+      unawaited(_computeAccuracy());
       return;
     }
     if (_position.sideToMove == _humanSide) return;
@@ -393,6 +403,20 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
     });
     unawaited(ref.read(updateShogiRatingAfterGameProvider)(result));
     ref.read(clearActiveShogiGameProvider)();
+    unawaited(_computeAccuracy());
+  }
+
+  /// 終局後に一度だけ呼ばれる。エンジンが1手ごとに評価するため数秒
+  /// かかりうるが、対局終了の表示自体をブロックしたくないので
+  /// `unawaited`で呼び出し、結果が出たらバッジを差し込む形にしている。
+  Future<void> _computeAccuracy() async {
+    setState(() => _accuracyLoading = true);
+    final analysis = await ref.read(runShogiReviewProvider)();
+    if (!mounted) return;
+    setState(() {
+      _accuracyLoading = false;
+      _accuracyAnalysis = analysis;
+    });
   }
 
   void _newGame() {
@@ -401,6 +425,8 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
       _hints = const [];
       _status = '';
       _positionHistory.clear();
+      _accuracyAnalysis = null;
+      _accuracyLoading = false;
     });
     ref.read(startShogiGameProvider)();
     unawaited(ref.read(persistActiveShogiGameProvider)());
@@ -484,6 +510,12 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
                 ),
                 if (!_result.isOngoing) ...[
                   const SizedBox(height: 8),
+                  _AccuracyBadge(
+                    loading: _accuracyLoading,
+                    analysis: _accuracyAnalysis,
+                    humanSide: _humanSide,
+                  ),
+                  const SizedBox(height: 8),
                   Wrap(
                     alignment: WrapAlignment.center,
                     spacing: 8,
@@ -550,6 +582,66 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 終局後に表示する「あなたの正確度」バッジ。感想戦に明示的に入らないと
+/// 見えない数字ではなく、対局直後の一番目立つ場所にまず数字そのものを
+/// 出すことで、「AIが本当にコーチしてくれる」という価値を抽象的な宣伝
+/// 文句ではなく具体的な体験として示す。タップすると感想戦画面に飛べる
+/// （内訳を見るための自然な入口）。
+class _AccuracyBadge extends StatelessWidget {
+  const _AccuracyBadge({
+    required this.loading,
+    required this.analysis,
+    required this.humanSide,
+  });
+
+  final bool loading;
+  final GameAnalysis? analysis;
+  final Side humanSide;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          SizedBox(width: 8),
+          Text('正確度を計算中…', style: TextStyle(fontSize: 12)),
+        ],
+      );
+    }
+    final result = analysis;
+    if (result == null) return const SizedBox.shrink();
+
+    final accuracy = result.accuracyFor(humanSide);
+    return InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ShogiReviewScreen()),
+      ),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          'あなたの正確度: ${accuracy.toStringAsFixed(0)}%',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onPrimaryContainer,
           ),
         ),
       ),
