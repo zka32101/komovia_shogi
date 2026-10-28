@@ -9,4 +9,5 @@ export 'onboarding_provider.dart';
 export 'shogi_game_provider.dart';
 export 'shogi_growth_provider.dart';
 export 'shogi_resume_provider.dart';
+export 'shogi_review_provider.dart';
 export 'tournament_provider.dart';
