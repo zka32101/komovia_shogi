@@ -5,9 +5,52 @@ import 'package:komovia_shogi/komovia_shogi.dart';
 
 import '../../viewmodels/index.dart';
 
+/// この画面の3ステップ。`komovia_core`の`OnboardingStep`/`OnboardingProgress`
+/// 上に構築する — フロー進行と「実際にやるまで次へ進めない」というゲーム
+/// 非依存のロジックは`komovia_core`側に切り出し済み（komovia_shogiが最初の
+/// 実装、他の3アプリはこのパターンを後続で流用する想定）。このファイルの
+/// 責務は、ステップを実際のウィジェットに描画することと、最後のステップの
+/// 本物のインタラクティブデモ（銀で歩を取る）だけ。
+const _steps = [
+  OnboardingStep(
+    id: 'how-to-move',
+    title: '駒の動かし方',
+    body: '駒をタップすると、動かせるマスがハイライトされます。'
+        'ハイライトされたマスをタップすれば、そこへ指せます。',
+    icon: 'touch_app',
+  ),
+  OnboardingStep(
+    id: 'win-condition',
+    title: '勝敗',
+    body: '相手の「王将」を詰ませた方の勝ちです。'
+        '取った相手の駒は「持ち駒」になり、後で自分の駒として盤に打てます。',
+    icon: 'emoji_events_outlined',
+  ),
+  OnboardingStep(
+    id: 'capture-demo',
+    title: '実際にやってみる',
+    body: '銀をタップして、歩を取ってみましょう',
+    requiresExplicitCompletion: true,
+  ),
+];
+
+/// `OnboardingStep.icon`（Flutter非依存の文字列識別子）を実際の`IconData`
+/// に解決する — この変換自体がアプリ固有の責務（komovia_coreはFlutterの
+/// 型を一切知らない）。
+IconData? _iconFor(String? name) {
+  switch (name) {
+    case 'touch_app':
+      return Icons.touch_app;
+    case 'emoji_events_outlined':
+      return Icons.emoji_events_outlined;
+    default:
+      return null;
+  }
+}
+
 /// 初回起動時だけ表示する、最短で「駒を取る」体験までたどり着く一回限りの
-/// ルール説明。3ページ構成（駒の動かし方→勝敗条件→実際に駒を取ってみる）で、
-/// 最後のページだけが実際にタップできるミニ盤になっている。
+/// ルール説明。3ステップ構成（駒の動かし方→勝敗条件→実際に駒を取ってみる）で、
+/// 最後のステップだけが実際にタップできるミニ盤になっている。
 ///
 /// いつでも見返せる参照用のルール説明ではない（そちらは別途作る想定） —
 /// これは「最初の1回だけ」のオンボーディングで、[completeOnboardingProvider]
@@ -24,7 +67,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
-  int _page = 0;
+  OnboardingProgress _progress = const OnboardingProgress(steps: _steps);
 
   @override
   void dispose() {
@@ -33,13 +76,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   void _next() {
+    setState(() => _progress = _progress.advance());
     _pageController.nextPage(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeOut,
     );
   }
 
+  void _onDemoCaptured() {
+    setState(() => _progress = _progress.markStepCompleted('capture-demo'));
+  }
+
   Future<void> _finish() async {
+    // advance()はここでは記録としての意味合い（isFlowCompleteを立てる）
+    // のみ — 画面遷移は直接onFinishedで行う。
+    setState(() => _progress = _progress.advance());
     await ref.read(completeOnboardingProvider)();
     widget.onFinished();
   }
@@ -54,23 +105,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: PageView(
                 controller: _pageController,
                 physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (i) => setState(() => _page = i),
                 children: [
-                  _RulesCard(
-                    icon: Icons.touch_app,
-                    title: '駒の動かし方',
-                    body: '駒をタップすると、動かせるマスがハイライトされます。'
-                        'ハイライトされたマスをタップすれば、そこへ指せます。',
-                    onNext: _next,
+                  _RulesCard(step: _steps[0], onNext: _next),
+                  _RulesCard(step: _steps[1], onNext: _next),
+                  _CaptureDemoCard(
+                    step: _steps[2],
+                    captured: _progress.completedStepIds
+                        .contains('capture-demo'),
+                    onCaptured: _onDemoCaptured,
+                    onFinished: _finish,
                   ),
-                  _RulesCard(
-                    icon: Icons.emoji_events_outlined,
-                    title: '勝敗',
-                    body: '相手の「王将」を詰ませた方の勝ちです。'
-                        '取った相手の駒は「持ち駒」になり、後で自分の駒として盤に打てます。',
-                    onNext: _next,
-                  ),
-                  _CaptureDemoCard(onFinished: _finish),
                 ],
               ),
             ),
@@ -79,14 +123,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
-                  3,
+                  _steps.length,
                   (i) => Container(
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: i == _page
+                      color: i == _progress.currentIndex
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.surfaceContainerHighest,
                     ),
@@ -102,32 +146,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 }
 
 class _RulesCard extends StatelessWidget {
-  const _RulesCard({
-    required this.icon,
-    required this.title,
-    required this.body,
-    required this.onNext,
-  });
+  const _RulesCard({required this.step, required this.onNext});
 
-  final IconData icon;
-  final String title;
-  final String body;
+  final OnboardingStep step;
   final VoidCallback onNext;
 
   @override
   Widget build(BuildContext context) {
+    final icon = _iconFor(step.icon);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 72, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 24),
-            Text(title, style: Theme.of(context).textTheme.headlineSmall),
+            if (icon != null) ...[
+              Icon(icon, size: 72, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(height: 24),
+            ],
+            Text(step.title, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 16),
             Text(
-              body,
+              step.body,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge,
             ),
@@ -143,9 +183,22 @@ class _RulesCard extends StatelessWidget {
 /// オンボーディング最後のページ: 実際にタップして1枚取ってみる体験。
 /// `onboardingDemoPosition()`は「銀が歩をすぐ前で取れる」だけの最小構成 —
 /// 1タップで駒を選び、もう1タップで取る、という最短の「あっ」体験にする。
+///
+/// 捕獲が成立すると[onCaptured]（`OnboardingProgress.markStepCompleted`
+/// を呼ぶ）を一度だけ呼び、それによって親の`FilledButton`（「はじめる」）
+/// が有効になる — ボタンの有効/無効自体はこのウィジェットではなく親が
+/// `OnboardingProgress.canAdvance`相当の判断で決める。
 class _CaptureDemoCard extends StatefulWidget {
-  const _CaptureDemoCard({required this.onFinished});
+  const _CaptureDemoCard({
+    required this.step,
+    required this.captured,
+    required this.onCaptured,
+    required this.onFinished,
+  });
 
+  final OnboardingStep step;
+  final bool captured;
+  final VoidCallback onCaptured;
   final Future<void> Function() onFinished;
 
   @override
@@ -158,10 +211,9 @@ class _CaptureDemoCardState extends State<_CaptureDemoCard> {
   late ShogiPosition _position = onboardingDemoPosition();
   Square? _selected;
   List<Square> _hints = const [];
-  bool _captured = false;
 
   void _onTapSquare(Square square) {
-    if (_captured) return;
+    if (widget.captured) return;
     if (_selected == null) {
       final legal = _game
           .legalMoves(_position)
@@ -181,8 +233,8 @@ class _CaptureDemoCardState extends State<_CaptureDemoCard> {
         _position = _game.apply(_position, onboardingDemoCaptureMove);
         _selected = null;
         _hints = const [];
-        _captured = true;
       });
+      widget.onCaptured();
     } else {
       setState(() {
         _selected = null;
@@ -200,7 +252,7 @@ class _CaptureDemoCardState extends State<_CaptureDemoCard> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              _captured ? 'やった、1枚取れました！' : '銀をタップして、歩を取ってみましょう',
+              widget.captured ? 'やった、1枚取れました！' : widget.step.body,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
@@ -237,7 +289,7 @@ class _CaptureDemoCardState extends State<_CaptureDemoCard> {
               },
             ),
             const SizedBox(height: 16),
-            if (_captured)
+            if (widget.captured)
               Text(
                 '取った駒は自分の「持ち駒」になります。後で盤の空いているマスに打てます。',
                 textAlign: TextAlign.center,
@@ -245,7 +297,7 @@ class _CaptureDemoCardState extends State<_CaptureDemoCard> {
               ),
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: _captured ? widget.onFinished : null,
+              onPressed: widget.captured ? widget.onFinished : null,
               child: const Text('はじめる'),
             ),
           ],
