@@ -215,5 +215,8 @@
   "difficultyBeginnerDescription": "ランダムに近い手。将棋を始めたばかりの方向け。",
   "difficultyEasyDescription": "簡単な読みのみ。油断すると負けることもあります。",
   "difficultyMediumDescription": "基本的な戦術を踏まえて指します。",
-  "difficultyHardDescription": "しっかり読んで指します。手応えのある相手です。"
+  "difficultyHardDescription": "しっかり読んで指します。手応えのある相手です。",
+
+  "showAttackMapTooltip": "効きを表示",
+  "hideAttackMapTooltip": "効き非表示"
 }

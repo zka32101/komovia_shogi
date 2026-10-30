@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:komovia_core/komovia_core.dart';
 
+import 'logic.dart';
 import 'mini_board_widget.dart';
 import 'piece.dart';
 import 'shogi_position.dart';
@@ -26,6 +27,14 @@ import 'shogi_position.dart';
 /// whole given [BoardSize] is the 9x9 grid itself — matching
 /// `MiniBoardWidget`'s own `cellSize = (boardSize - 4) / 9` (a 2px border
 /// on each side).
+///
+/// [showAttackMap] is likewise an additional optional parameter beyond
+/// the shared `BoardRenderer` contract: the 駒の効き（利き）可視化
+/// (piece attack-map) overlay from `kouki-shogi`'s `kansousen_screen.dart`
+/// (game review) — `GL.attackMap` was already ported verbatim into
+/// `logic.dart` and `MiniBoardWidget` already accepts/paints
+/// `p1AttackMap`/`p2AttackMap`, but nothing computed and passed them
+/// through [build] until now.
 class ShogiBoardRenderer implements BoardRenderer<ShogiPosition, Widget> {
   @override
   Widget build(
@@ -35,6 +44,7 @@ class ShogiBoardRenderer implements BoardRenderer<ShogiPosition, Widget> {
     Square? selected,
     bool textured = false,
     double? advantageRatio,
+    bool showAttackMap = false,
   }) {
     (int, int)? lastFrom;
     (int, int)? lastTo;
@@ -63,6 +73,8 @@ class ShogiBoardRenderer implements BoardRenderer<ShogiPosition, Widget> {
       p2Hand: position.p2Hand,
       textured: textured,
       advantageRatio: advantageRatio,
+      p1AttackMap: showAttackMap ? GL.attackMap(position.board, true) : null,
+      p2AttackMap: showAttackMap ? GL.attackMap(position.board, false) : null,
     );
   }
 

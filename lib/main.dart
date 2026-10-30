@@ -161,6 +161,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
   @override
   void initState() {
     super.initState();
+    unawaited(ref.read(loadShowAttackMapPreferenceProvider)());
     // 中断・再開機能: 既に対局が進行中（再開された、または同一セッション内
     // で前回から続いている）場合は、難易度選択ダイアログを出さずそのまま
     // 続きの盤面を表示する。
@@ -532,6 +533,18 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
             icon: const Icon(Icons.flag),
             tooltip: l10n.resignTooltip,
           ),
+          IconButton(
+            onPressed: () => ref.read(toggleShowAttackMapProvider)(),
+            icon: Icon(
+              Icons.visibility,
+              color: ref.watch(showAttackMapProvider)
+                  ? Colors.orangeAccent
+                  : null,
+            ),
+            tooltip: ref.watch(showAttackMapProvider)
+                ? l10n.hideAttackMapTooltip
+                : l10n.showAttackMapTooltip,
+          ),
           IconButton(onPressed: _newGame, icon: const Icon(Icons.refresh)),
         ],
       ),
@@ -617,6 +630,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
                             advantageRatio:
                                 ShogiBoardRenderer.materialAdvantageRatio(
                                     _position),
+                            showAttackMap: ref.watch(showAttackMapProvider),
                           ),
                         ),
                       );
