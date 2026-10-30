@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:komovia_core/komovia_core.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../viewmodels/index.dart';
 
 class TournamentBracketScreen extends ConsumerWidget {
@@ -18,6 +19,7 @@ class TournamentBracketScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final matches = ref.watch(tournamentMatchesStreamProvider(tournamentId)).value ??
         [];
     final tournaments = ref.watch(tournamentsStreamProvider).value ?? [];
@@ -42,21 +44,21 @@ class TournamentBracketScreen extends ConsumerWidget {
     displayNames[uid] = displayName;
 
     return Scaffold(
-      appBar: AppBar(title: Text(tournament?.name ?? 'Tournament')),
+      appBar: AppBar(title: Text(tournament?.name ?? l10n.tournamentDefaultTitle)),
       floatingActionButton: tournament != null && tournament.isUpcoming
           ? FloatingActionButton.extended(
               onPressed: () =>
                   ref.read(startTournamentProvider)(tournamentId, displayNames),
-              label: const Text('Start'),
+              label: Text(l10n.startButton),
               icon: const Icon(Icons.play_arrow),
             )
           : null,
       body: byRound.isEmpty
-          ? const Center(child: Text('Bracket not generated yet'))
+          ? Center(child: Text(l10n.bracketNotGeneratedMessage))
           : ListView(
               children: byRound.entries.map((entry) {
                 return ExpansionTile(
-                  title: Text('Round ${entry.key}'),
+                  title: Text(l10n.roundLabel(entry.key)),
                   initiallyExpanded: true,
                   children: entry.value.map<Widget>((m) {
                     final isMyMatch =
@@ -65,11 +67,14 @@ class TournamentBracketScreen extends ConsumerWidget {
                         !m.isBye;
                     return ListTile(
                       title: Text(
-                        '${m.player1DisplayName ?? "Bye"} vs ${m.player2DisplayName ?? "Bye"}',
+                        '${m.player1DisplayName ?? l10n.byeLabel} vs '
+                        '${m.player2DisplayName ?? l10n.byeLabel}',
                       ),
                       subtitle: Text(
                         m.isCompleted
-                            ? 'Winner: ${displayNames[m.winnerUid] ?? m.winnerUid}'
+                            ? l10n.winnerLabel(
+                                displayNames[m.winnerUid] ?? m.winnerUid ?? '',
+                              )
                             : m.status,
                       ),
                       trailing: isMyMatch
@@ -80,7 +85,7 @@ class TournamentBracketScreen extends ConsumerWidget {
                                 uid,
                                 displayNames,
                               ),
-                              child: const Text('Report win'),
+                              child: Text(l10n.reportWinButton),
                             )
                           : null,
                     );

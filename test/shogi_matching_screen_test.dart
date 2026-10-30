@@ -11,6 +11,7 @@ import 'package:komovia_shogi/viewmodels/shogi_matching_provider.dart';
 import 'package:komovia_shogi/viewmodels/shogi_pvp_game_provider.dart';
 import 'package:komovia_shogi/views/screens/shogi_matching_screen.dart';
 import 'package:komovia_shogi/views/screens/shogi_pvp_game_screen.dart';
+import 'package:komovia_shogi/l10n/app_localizations.dart';
 
 void main() {
   Future<void> pumpScreen(
@@ -30,6 +31,8 @@ void main() {
               .overrideWithValue(LeaderboardService(firestore: firestore)),
         ],
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: ShogiMatchingScreen(uid: uid, displayName: 'Alice'),
         ),
       ),

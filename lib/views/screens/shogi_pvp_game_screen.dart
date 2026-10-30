@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:komovia_core/komovia_core.dart';
 import 'package:komovia_shogi/komovia_shogi.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/shogi_pvp_game.dart';
 import '../../viewmodels/index.dart';
 
@@ -96,26 +97,29 @@ class _ShogiPvpGameScreenState extends ConsumerState<ShogiPvpGameScreen> {
         await ref.read(applyShogiPvpMoveProvider)(widget.gameId, uid, move);
     if (!mounted) return;
     if (!applied) {
-      setState(() => _errorMessage = 'その手は指せません');
+      setState(
+        () => _errorMessage = AppLocalizations.of(context)!.illegalMoveMessage,
+      );
     } else {
       setState(() => _errorMessage = null);
     }
   }
 
   Future<void> _confirmResign(String uid) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('投了しますか？'),
-        content: const Text('投了すると対局が終了します。'),
+        title: Text(l10n.pvpResignConfirmTitle),
+        content: Text(l10n.pvpResignConfirmContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('キャンセル'),
+            child: Text(l10n.pvpResignCancelButton),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('投了する'),
+            child: Text(l10n.resignButton),
           ),
         ],
       ),
@@ -124,32 +128,33 @@ class _ShogiPvpGameScreenState extends ConsumerState<ShogiPvpGameScreen> {
     await ref.read(resignShogiPvpGameProvider)(widget.gameId, uid);
   }
 
-  String _statusText(ShogiPvpGame pvp, Side? humanSide) {
+  String _statusText(AppLocalizations l10n, ShogiPvpGame pvp, Side? humanSide) {
     if (pvp.isFinished) {
-      if (pvp.winnerUid == null) return '対局が終了しました';
+      if (pvp.winnerUid == null) return l10n.gameEndedMessage;
       final uid = ref.read(currentUidProvider);
-      if (uid == pvp.winnerUid) return 'あなたの勝ちです！';
-      return 'あなたの負けです';
+      if (uid == pvp.winnerUid) return l10n.youWonMessage;
+      return l10n.youLostMessage;
     }
-    if (humanSide == null) return '観戦中';
+    if (humanSide == null) return l10n.spectatingLabel;
     return pvp.isTurnOf(ref.read(currentUidProvider) ?? '')
-        ? 'あなたの番です'
-        : '相手の番です';
+        ? l10n.yourTurnLabel
+        : l10n.opponentTurnLabel;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final uid = ref.watch(currentUidProvider);
     final gameAsync = ref.watch(shogiPvpGameStreamProvider(widget.gameId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('対局')),
+      appBar: AppBar(title: Text(l10n.pvpGameTitle)),
       body: gameAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('読み込みに失敗しました: $error')),
+        error: (error, _) => Center(child: Text(l10n.loadFailedMessage('$error'))),
         data: (pvp) {
           if (uid == null) {
-            return const Center(child: Text('ログインが必要です'));
+            return Center(child: Text(l10n.loginRequiredMessage));
           }
           final (position, historyKeys) = _replay(pvp.kifMoves);
           final humanSide = _humanSide(pvp, uid);
@@ -161,7 +166,7 @@ class _ShogiPvpGameScreenState extends ConsumerState<ShogiPvpGameScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    _statusText(pvp, humanSide),
+                    _statusText(l10n, pvp, humanSide),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   if (_errorMessage != null)
@@ -219,7 +224,7 @@ class _ShogiPvpGameScreenState extends ConsumerState<ShogiPvpGameScreen> {
                       padding: const EdgeInsets.only(top: 12),
                       child: OutlinedButton(
                         onPressed: () => _confirmResign(uid),
-                        child: const Text('投了する'),
+                        child: Text(l10n.resignButton),
                       ),
                     ),
                 ],

@@ -9,6 +9,7 @@ import 'package:komovia_shogi/komovia_shogi.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'firebase_options.dart';
+import 'l10n/app_localizations.dart';
 import 'viewmodels/index.dart';
 import 'views/screens/home_screen.dart';
 import 'views/screens/onboarding_screen.dart';
@@ -40,6 +41,8 @@ class KomoviaShogiApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Komovia Shogi',
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme:
           ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown)),
       home: const _RootScreen(),
@@ -173,14 +176,41 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
   /// the app bar's tune icon at any point - picking there restarts the
   /// game with the newly-selected level, since mid-game strength changes
   /// would be confusing.
+  String _difficultyName(AppLocalizations l10n, ShogiDifficulty d) {
+    switch (d) {
+      case ShogiDifficulty.beginner:
+        return l10n.difficultyBeginnerName;
+      case ShogiDifficulty.easy:
+        return l10n.difficultyEasyName;
+      case ShogiDifficulty.medium:
+        return l10n.difficultyMediumName;
+      case ShogiDifficulty.hard:
+        return l10n.difficultyHardName;
+    }
+  }
+
+  String _difficultyDescription(AppLocalizations l10n, ShogiDifficulty d) {
+    switch (d) {
+      case ShogiDifficulty.beginner:
+        return l10n.difficultyBeginnerDescription;
+      case ShogiDifficulty.easy:
+        return l10n.difficultyEasyDescription;
+      case ShogiDifficulty.medium:
+        return l10n.difficultyMediumDescription;
+      case ShogiDifficulty.hard:
+        return l10n.difficultyHardDescription;
+    }
+  }
+
   Future<void> _pickDifficulty({bool restartGame = true}) async {
+    final l10n = AppLocalizations.of(context)!;
     var quick = ref.read(shogiQuickGameProvider);
     final selected = await showDialog<ShogiDifficulty>(
       context: context,
       barrierDismissible: !restartGame,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => SimpleDialog(
-          title: const Text('AIの強さを選んでください'),
+          title: Text(l10n.chooseAiStrengthTitle),
           children: [
             ...ShogiDifficulty.values.map(
               (d) => SimpleDialogOption(
@@ -194,10 +224,13 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        d.displayName,
+                        _difficultyName(l10n, d),
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      Text(d.description, style: const TextStyle(fontSize: 12)),
+                      Text(
+                        _difficultyDescription(l10n, d),
+                        style: const TextStyle(fontSize: 12),
+                      ),
                     ],
                   ),
                 ),
@@ -208,8 +241,8 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
               value: quick,
               onChanged: (value) =>
                   setDialogState(() => quick = value ?? false),
-              title: const Text('クイック対局'),
-              subtitle: const Text('AIの考慮時間を短くし、短時間で一局を終えられるようにします。'),
+              title: Text(l10n.quickGameLabel),
+              subtitle: Text(l10n.quickGameDescription),
               controlAffinity: ListTileControlAffinity.leading,
             ),
           ],
@@ -325,9 +358,10 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
 
   Future<void> _checkResultOrLetAiMove() async {
     final result = _game.result(_position, historyKeys: _historyKeys);
+    final l10n = AppLocalizations.of(context)!;
     if (!result.isOngoing) {
       ref.read(shogiResultProvider.notifier).state = result;
-      setState(() => _status = _describeResult(result));
+      setState(() => _status = _describeResult(l10n, result));
       unawaited(ref.read(updateShogiRatingAfterGameProvider)(result));
       ref.read(clearActiveShogiGameProvider)();
       unawaited(_computeAccuracy());
@@ -337,7 +371,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
 
     setState(() {
       _aiThinking = true;
-      _status = 'AI考慮中…';
+      _status = l10n.aiThinkingMessage;
     });
     final quick = ref.read(shogiQuickGameProvider);
     final move = await _engine.bestMove(
@@ -353,14 +387,16 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
     if (move != null) _applyMove(move);
   }
 
-  String _describeResult(GameResult result) {
+  String _describeResult(AppLocalizations l10n, GameResult result) {
     switch (result.kind) {
       case ResultKind.win:
-        final winner = result.winner == Side.first ? '先手' : '後手';
-        final suffix = result.reason == WinReason.resignation ? '（投了）' : '';
-        return '$winner勝ち$suffix';
+        final winner =
+            result.winner == Side.first ? l10n.senteLabel : l10n.goteLabel;
+        final suffix =
+            result.reason == WinReason.resignation ? l10n.resignationSuffix : '';
+        return l10n.winResultMessage(winner, suffix);
       case ResultKind.draw:
-        return '引き分け';
+        return l10n.drawResultMessage;
       case ResultKind.ongoing:
         return '';
     }
@@ -374,19 +410,20 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
   /// 非同期のAI応手と投了が競合して結果を上書きし合わないようにする。
   Future<void> _confirmResign() async {
     if (!_canResign) return;
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('投了しますか？'),
-        content: const Text('投了すると、この対局はあなたの負けとして終了します。'),
+        title: Text(l10n.mainResignConfirmTitle),
+        content: Text(l10n.mainResignConfirmContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('キャンセル'),
+            child: Text(l10n.mainResignCancelButton),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('投了する'),
+            child: Text(l10n.resignButton),
           ),
         ],
       ),
@@ -397,7 +434,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
     ref.read(shogiPositionProvider.notifier).state = newPosition;
     ref.read(shogiResultProvider.notifier).state = result;
     setState(() {
-      _status = _describeResult(result);
+      _status = _describeResult(l10n, result);
       _selected = null;
       _hints = const [];
     });
@@ -436,21 +473,24 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
   /// the OS share sheet, built through komovia_core's ShareableMoment so
   /// it matches the same caption shape the other Komovia apps use.
   Future<void> _shareResult() async {
+    final l10n = AppLocalizations.of(context)!;
     final won = _result.winner == _humanSide;
     final isDraw = _result.kind == ResultKind.draw;
     final headline = switch ((won, isDraw)) {
-      (_, true) => '引き分けでした！',
-      (true, false) => '勝ちました！',
-      (false, false) => '惜しくも敗戦…',
+      (_, true) => l10n.shareDrawHeadline,
+      (true, false) => l10n.shareWinHeadline,
+      (false, false) => l10n.shareLoseHeadline,
     };
 
     await Share.share(
       buildShareCaption(
         ShareableMoment(
-          appName: 'Komovia将棋',
+          appName: l10n.shareAppName,
           headline: headline,
-          statLines: ['手数: ${ref.read(shogiMoveCountProvider)}手'],
-          hashtag: '#Komovia将棋',
+          statLines: [
+            l10n.shareMoveCountLine(ref.read(shogiMoveCountProvider)),
+          ],
+          hashtag: l10n.shareHashtag,
         ),
       ),
     );
@@ -458,20 +498,23 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Komovia Shogi'),
+        title: Text(l10n.appTitle),
         actions: [
           IconButton(
             onPressed: _pickDifficulty,
             icon: const Icon(Icons.tune),
-            tooltip: 'AIの強さ（現在: ${_difficulty.displayName}'
-                '${ref.watch(shogiQuickGameProvider) ? "・クイック対局" : ""}）',
+            tooltip: l10n.aiStrengthTooltip(
+              _difficultyName(l10n, _difficulty),
+              ref.watch(shogiQuickGameProvider) ? l10n.quickGameSuffixLabel : '',
+            ),
           ),
           IconButton(
             onPressed: _canUndo ? _undo : null,
             icon: const Icon(Icons.undo),
-            tooltip: '待った',
+            tooltip: l10n.undoTooltip,
           ),
           IconButton(
             onPressed: _canRequestHint ? _showHint : null,
@@ -482,12 +525,12 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.lightbulb_outline),
-            tooltip: 'ヒント',
+            tooltip: l10n.hintTooltip,
           ),
           IconButton(
             onPressed: _canResign ? _confirmResign : null,
             icon: const Icon(Icons.flag),
-            tooltip: '投了',
+            tooltip: l10n.resignTooltip,
           ),
           IconButton(onPressed: _newGame, icon: const Icon(Icons.refresh)),
         ],
@@ -505,7 +548,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  _status.isEmpty ? '先手（あなた）の番です' : _status,
+                  _status.isEmpty ? l10n.yourTurnStatusMessage : _status,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 if (!_result.isOngoing) ...[
@@ -523,7 +566,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
                       OutlinedButton.icon(
                         onPressed: _shareResult,
                         icon: const Icon(Icons.share),
-                        label: const Text('SNSでシェア'),
+                        label: Text(l10n.shareButtonLabel),
                       ),
                       OutlinedButton.icon(
                         onPressed: () => Navigator.push(
@@ -533,7 +576,7 @@ class _ShogiGameScreenState extends ConsumerState<ShogiGameScreen> {
                           ),
                         ),
                         icon: const Icon(Icons.insights),
-                        label: const Text('感想戦'),
+                        label: Text(l10n.reviewTitle),
                       ),
                     ],
                   ),
@@ -607,17 +650,18 @@ class _AccuracyBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (loading) {
-      return const Row(
+      return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
+          const SizedBox(
             width: 14,
             height: 14,
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
-          SizedBox(width: 8),
-          Text('正確度を計算中…', style: TextStyle(fontSize: 12)),
+          const SizedBox(width: 8),
+          Text(l10n.accuracyCalculatingMessage, style: const TextStyle(fontSize: 12)),
         ],
       );
     }
@@ -638,7 +682,7 @@ class _AccuracyBadge extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
-          'あなたの正確度: ${accuracy.toStringAsFixed(0)}%',
+          l10n.yourAccuracyLabel(accuracy.toStringAsFixed(0)),
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: Theme.of(context).colorScheme.onPrimaryContainer,

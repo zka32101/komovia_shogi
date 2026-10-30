@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:komovia_shogi/main.dart';
 import 'package:komovia_shogi/viewmodels/index.dart';
+import 'package:komovia_shogi/l10n/app_localizations.dart';
 
 void main() {
   testWidgets(
@@ -14,7 +15,10 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: ShogiGameScreen()),
+        child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ShogiGameScreen()),
       ),
     );
     await tester.pump();
@@ -40,7 +44,10 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: ShogiGameScreen()),
+        child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ShogiGameScreen()),
       ),
     );
     await tester.pump();

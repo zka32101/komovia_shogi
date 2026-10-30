@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:komovia_core/komovia_core.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../viewmodels/index.dart';
 
 /// 終局後の感想戦。komovia_core PR #7の共有`ReviewEngine`
@@ -43,14 +44,15 @@ class _ShogiReviewScreenState extends ConsumerState<ShogiReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('感想戦')),
+      appBar: AppBar(title: Text(l10n.reviewTitle)),
       body: _analysisFuture == null
           ? Center(
               child: FilledButton.icon(
                 onPressed: _startReview,
                 icon: const Icon(Icons.insights),
-                label: const Text('検討する'),
+                label: Text(l10n.startReviewButton),
               ),
             )
           : FutureBuilder<GameAnalysis>(
@@ -66,7 +68,9 @@ class _ShogiReviewScreenState extends ConsumerState<ShogiReviewScreen> {
                           const CircularProgressIndicator(),
                           const SizedBox(height: 16),
                           Text(
-                            _total == 0 ? '検討中…' : '検討中… ($_done / $_total)',
+                            _total == 0
+                                ? l10n.reviewingMessage
+                                : l10n.reviewingProgressMessage(_done, _total),
                           ),
                         ],
                       ),
@@ -74,7 +78,9 @@ class _ShogiReviewScreenState extends ConsumerState<ShogiReviewScreen> {
                   );
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text('検討に失敗しました: ${snapshot.error}'));
+                  return Center(
+                    child: Text(l10n.reviewFailedMessage('${snapshot.error}')),
+                  );
                 }
                 final analysis = snapshot.data!;
                 return _AnalysisBody(analysis: analysis);
@@ -91,6 +97,7 @@ class _AnalysisBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -98,21 +105,21 @@ class _AnalysisBody extends StatelessWidget {
           children: [
             Expanded(
               child: _AccuracyCard(
-                label: '先手',
+                label: l10n.senteLabel,
                 accuracy: analysis.accuracyFor(Side.first),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _AccuracyCard(
-                label: '後手',
+                label: l10n.goteLabel,
                 accuracy: analysis.accuracyFor(Side.second),
               ),
             ),
           ],
         ),
         const SizedBox(height: 16),
-        const Text('一手ごとの評価', style: TextStyle(fontWeight: FontWeight.bold)),
+        Text(l10n.moveByMoveLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         for (final move in analysis.moves) _MoveTile(move: move),
       ],
@@ -141,7 +148,8 @@ class _AccuracyCard extends StatelessWidget {
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const Text('正確度', style: TextStyle(fontSize: 12)),
+            Text(AppLocalizations.of(context)!.accuracyLabel,
+                style: const TextStyle(fontSize: 12)),
           ],
         ),
       ),
@@ -154,17 +162,34 @@ class _MoveTile extends StatelessWidget {
 
   final MoveAnalysis move;
 
-  static const _labels = {
-    MoveQuality.best: ('最善', Colors.green),
-    MoveQuality.good: ('良い手', Colors.lightGreen),
-    MoveQuality.inaccuracy: ('不正確', Colors.orange),
-    MoveQuality.mistake: ('悪手', Colors.deepOrange),
-    MoveQuality.blunder: ('大悪手', Colors.red),
+  static const _colors = {
+    MoveQuality.best: Colors.green,
+    MoveQuality.good: Colors.lightGreen,
+    MoveQuality.inaccuracy: Colors.orange,
+    MoveQuality.mistake: Colors.deepOrange,
+    MoveQuality.blunder: Colors.red,
   };
+
+  String _labelFor(AppLocalizations l10n, MoveQuality quality) {
+    switch (quality) {
+      case MoveQuality.best:
+        return l10n.moveQualityBest;
+      case MoveQuality.good:
+        return l10n.moveQualityGood;
+      case MoveQuality.inaccuracy:
+        return l10n.moveQualityInaccuracy;
+      case MoveQuality.mistake:
+        return l10n.moveQualityMistake;
+      case MoveQuality.blunder:
+        return l10n.moveQualityBlunder;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final (label, color) = _labels[move.quality]!;
+    final l10n = AppLocalizations.of(context)!;
+    final color = _colors[move.quality]!;
+    final label = _labelFor(l10n, move.quality);
     return ListTile(
       dense: true,
       leading: CircleAvatar(
@@ -175,7 +200,7 @@ class _MoveTile extends StatelessWidget {
           style: const TextStyle(fontSize: 11, color: Colors.white),
         ),
       ),
-      title: Text(move.side == Side.first ? '先手' : '後手'),
+      title: Text(move.side == Side.first ? l10n.senteLabel : l10n.goteLabel),
       trailing: Chip(
         label: Text(label, style: const TextStyle(fontSize: 12)),
         backgroundColor: color.withValues(alpha: 0.15),

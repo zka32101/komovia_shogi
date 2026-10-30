@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../viewmodels/index.dart';
 
 class LeaderboardScreen extends ConsumerWidget {
@@ -8,11 +9,12 @@ class LeaderboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final entries = ref.watch(topLeaderboardEntriesProvider).value ?? [];
     return Scaffold(
-      appBar: AppBar(title: const Text('Leaderboard')),
+      appBar: AppBar(title: Text(l10n.leaderboardTitle)),
       body: entries.isEmpty
-          ? const Center(child: Text('No ranked players yet'))
+          ? Center(child: Text(l10n.noRankedPlayersMessage))
           : ListView.builder(
               itemCount: entries.length,
               itemBuilder: (context, i) {
@@ -22,7 +24,11 @@ class LeaderboardScreen extends ConsumerWidget {
                   title: Text(e.displayName),
                   trailing: Text('${e.rating}'),
                   subtitle: Text(
-                    '${e.wins}/${e.gamesPlayed} wins (${(e.winRate * 100).toStringAsFixed(0)}%)',
+                    l10n.winsRecordLabel(
+                      e.wins,
+                      e.gamesPlayed,
+                      (e.winRate * 100).toStringAsFixed(0),
+                    ),
                   ),
                 );
               },

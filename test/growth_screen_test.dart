@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:komovia_core/komovia_core.dart';
 import 'package:komovia_shogi/views/screens/growth_screen.dart';
 import 'package:komovia_shogi/viewmodels/index.dart';
+import 'package:komovia_shogi/l10n/app_localizations.dart';
 
 void main() {
   testWidgets('shows an empty-state message when no games have been played',
@@ -13,7 +14,10 @@ void main() {
         overrides: [
           myLeaderboardEntryProvider.overrideWith((ref) => Future.value(null)),
         ],
-        child: const MaterialApp(home: GrowthScreen()),
+        child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: GrowthScreen()),
       ),
     );
     await tester.pump();
@@ -40,7 +44,10 @@ void main() {
         overrides: [
           myLeaderboardEntryProvider.overrideWith((ref) => Future.value(entry)),
         ],
-        child: const MaterialApp(home: GrowthScreen()),
+        child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: GrowthScreen()),
       ),
     );
     await tester.pump();
@@ -69,7 +76,10 @@ void main() {
         overrides: [
           myLeaderboardEntryProvider.overrideWith((ref) => Future.value(entry)),
         ],
-        child: const MaterialApp(home: GrowthScreen()),
+        child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: GrowthScreen()),
       ),
     );
     await tester.pump();

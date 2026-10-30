@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../viewmodels/index.dart';
 import 'chat_screen.dart';
 
@@ -16,11 +17,12 @@ class MessageThreadsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final threads = ref.watch(threadsStreamProvider(uid)).value ?? [];
     return Scaffold(
-      appBar: AppBar(title: const Text('Messages')),
+      appBar: AppBar(title: Text(l10n.messagesScreenTitle)),
       body: threads.isEmpty
-          ? const Center(child: Text('No conversations yet'))
+          ? Center(child: Text(l10n.noConversationsMessage))
           : ListView(
               children: threads.map((t) {
                 final unread = t.unreadCountFor(uid);

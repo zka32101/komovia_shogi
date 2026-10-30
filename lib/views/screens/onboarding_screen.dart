@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:komovia_core/komovia_core.dart';
 import 'package:komovia_shogi/komovia_shogi.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../viewmodels/index.dart';
 
 /// この画面の3ステップ。`komovia_core`の`OnboardingStep`/`OnboardingProgress`
@@ -11,28 +12,26 @@ import '../../viewmodels/index.dart';
 /// 実装、他の3アプリはこのパターンを後続で流用する想定）。このファイルの
 /// 責務は、ステップを実際のウィジェットに描画することと、最後のステップの
 /// 本物のインタラクティブデモ（銀で歩を取る）だけ。
-const _steps = [
-  OnboardingStep(
-    id: 'how-to-move',
-    title: '駒の動かし方',
-    body: '駒をタップすると、動かせるマスがハイライトされます。'
-        'ハイライトされたマスをタップすれば、そこへ指せます。',
-    icon: 'touch_app',
-  ),
-  OnboardingStep(
-    id: 'win-condition',
-    title: '勝敗',
-    body: '相手の「王将」を詰ませた方の勝ちです。'
-        '取った相手の駒は「持ち駒」になり、後で自分の駒として盤に打てます。',
-    icon: 'emoji_events_outlined',
-  ),
-  OnboardingStep(
-    id: 'capture-demo',
-    title: '実際にやってみる',
-    body: '銀をタップして、歩を取ってみましょう',
-    requiresExplicitCompletion: true,
-  ),
-];
+List<OnboardingStep> _buildSteps(AppLocalizations l10n) => [
+      OnboardingStep(
+        id: 'how-to-move',
+        title: l10n.onboardingStep1Title,
+        body: l10n.onboardingStep1Body,
+        icon: 'touch_app',
+      ),
+      OnboardingStep(
+        id: 'win-condition',
+        title: l10n.onboardingStep2Title,
+        body: l10n.onboardingStep2Body,
+        icon: 'emoji_events_outlined',
+      ),
+      OnboardingStep(
+        id: 'capture-demo',
+        title: l10n.onboardingStep3Title,
+        body: l10n.onboardingStep3Body,
+        requiresExplicitCompletion: true,
+      ),
+    ];
 
 /// `OnboardingStep.icon`（Flutter非依存の文字列識別子）を実際の`IconData`
 /// に解決する — この変換自体がアプリ固有の責務（komovia_coreはFlutterの
@@ -65,9 +64,27 @@ class OnboardingScreen extends ConsumerStatefulWidget {
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
+// `OnboardingProgress`'s flow logic (advance/canAdvance/markStepCompleted)
+// only cares about each step's `id`/`requiresExplicitCompletion`, never
+// its title/body — those are rendered straight from the localized list
+// `_buildSteps` returns inside `build()`. This placeholder list exists
+// only so `OnboardingProgress` can be constructed before a `BuildContext`
+// (and therefore `AppLocalizations`) is available.
+const _stepIdsForProgress = [
+  OnboardingStep(id: 'how-to-move', title: '', body: ''),
+  OnboardingStep(id: 'win-condition', title: '', body: ''),
+  OnboardingStep(
+    id: 'capture-demo',
+    title: '',
+    body: '',
+    requiresExplicitCompletion: true,
+  ),
+];
+
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
-  OnboardingProgress _progress = const OnboardingProgress(steps: _steps);
+  OnboardingProgress _progress =
+      const OnboardingProgress(steps: _stepIdsForProgress);
 
   @override
   void dispose() {
@@ -97,6 +114,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final steps = _buildSteps(l10n);
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -106,10 +125,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 controller: _pageController,
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  _RulesCard(step: _steps[0], onNext: _next),
-                  _RulesCard(step: _steps[1], onNext: _next),
+                  _RulesCard(step: steps[0], onNext: _next),
+                  _RulesCard(step: steps[1], onNext: _next),
                   _CaptureDemoCard(
-                    step: _steps[2],
+                    step: steps[2],
                     captured: _progress.completedStepIds
                         .contains('capture-demo'),
                     onCaptured: _onDemoCaptured,
@@ -123,7 +142,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
-                  _steps.length,
+                  steps.length,
                   (i) => Container(
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     width: 8,
@@ -172,7 +191,10 @@ class _RulesCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyLarge,
             ),
             const SizedBox(height: 32),
-            FilledButton(onPressed: onNext, child: const Text('次へ')),
+            FilledButton(
+              onPressed: onNext,
+              child: Text(AppLocalizations.of(context)!.nextButton),
+            ),
           ],
         ),
       ),
@@ -245,6 +267,7 @@ class _CaptureDemoCardState extends State<_CaptureDemoCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -252,7 +275,7 @@ class _CaptureDemoCardState extends State<_CaptureDemoCard> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              widget.captured ? 'やった、1枚取れました！' : widget.step.body,
+              widget.captured ? l10n.capturedMessage : widget.step.body,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
@@ -291,14 +314,14 @@ class _CaptureDemoCardState extends State<_CaptureDemoCard> {
             const SizedBox(height: 16),
             if (widget.captured)
               Text(
-                '取った駒は自分の「持ち駒」になります。後で盤の空いているマスに打てます。',
+                l10n.capturedExplanationMessage,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: widget.captured ? widget.onFinished : null,
-              child: const Text('はじめる'),
+              child: Text(l10n.beginButton),
             ),
           ],
         ),

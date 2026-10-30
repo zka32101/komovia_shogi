@@ -5,6 +5,7 @@ import 'package:komovia_shogi/komovia_shogi.dart';
 import 'package:komovia_shogi/main.dart';
 import 'package:komovia_shogi/src/piece.dart';
 import 'package:komovia_shogi/viewmodels/index.dart';
+import 'package:komovia_shogi/l10n/app_localizations.dart';
 
 /// Regression test for a real RenderFlex overflow found while building the
 /// onboarding capture demo: `MiniBoardWidget` adds a 持ち駒 (hand) row
@@ -28,7 +29,10 @@ void main() {
           isShogiGameActiveProvider.overrideWith((ref) => true),
           shogiPositionProvider.overrideWith((ref) => position),
         ],
-        child: const MaterialApp(home: ShogiGameScreen()),
+        child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ShogiGameScreen()),
       ),
     );
     await tester.pump();
@@ -51,7 +55,10 @@ void main() {
           isShogiGameActiveProvider.overrideWith((ref) => true),
           shogiPositionProvider.overrideWith((ref) => position),
         ],
-        child: const MaterialApp(home: ShogiGameScreen()),
+        child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ShogiGameScreen()),
       ),
     );
     await tester.pump();

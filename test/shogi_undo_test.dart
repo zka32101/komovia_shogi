@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:komovia_shogi/main.dart';
 import 'package:komovia_shogi/viewmodels/index.dart';
+import 'package:komovia_shogi/l10n/app_localizations.dart';
 
 /// Drives [ShogiGameScreen] through its real UI (not a mock) to exercise
 /// the "待った" (undo) feature added alongside the AI-strength picker.
@@ -27,7 +28,10 @@ void main() {
   }
 
   testWidgets('undo button is disabled until a move has been played', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: MaterialApp(home: ShogiGameScreen())));
+    await tester.pumpWidget(const ProviderScope(child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ShogiGameScreen())));
     await dismissDifficultyPicker(tester);
 
     final undoButton = tester.widget<IconButton>(find.widgetWithIcon(IconButton, Icons.undo));
@@ -35,7 +39,10 @@ void main() {
   });
 
   testWidgets('undo restores the board to before the human move and AI reply', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: MaterialApp(home: ShogiGameScreen())));
+    await tester.pumpWidget(const ProviderScope(child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ShogiGameScreen())));
     await dismissDifficultyPicker(tester);
 
     await tester.tapAt(squareCenter(tester, 0, 6));
@@ -74,7 +81,10 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: ShogiGameScreen()),
+        child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ShogiGameScreen()),
       ),
     );
     await dismissDifficultyPicker(tester);

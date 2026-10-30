@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../viewmodels/index.dart';
 import 'tournament_bracket_screen.dart';
 
@@ -12,15 +13,16 @@ class TournamentScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final tournaments = ref.watch(tournamentsStreamProvider).value ?? [];
     return Scaffold(
-      appBar: AppBar(title: const Text('Tournaments')),
+      appBar: AppBar(title: Text(l10n.tournamentsTitle)),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateDialog(context, ref),
         child: const Icon(Icons.add),
       ),
       body: tournaments.isEmpty
-          ? const Center(child: Text('No tournaments yet'))
+          ? Center(child: Text(l10n.noTournamentsMessage))
           : ListView(
               children: tournaments.map((t) {
                 final joined = t.participantUids.contains(uid);
@@ -33,7 +35,7 @@ class TournamentScreen extends ConsumerWidget {
                       ? TextButton(
                           onPressed: () =>
                               ref.read(joinTournamentProvider)(t.id, uid),
-                          child: const Text('Join'),
+                          child: Text(l10n.joinButton),
                         )
                       : null,
                   onTap: () => Navigator.push(
@@ -53,19 +55,20 @@ class TournamentScreen extends ConsumerWidget {
   }
 
   void _showCreateDialog(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final nameController = TextEditingController();
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Create tournament'),
+        title: Text(l10n.createTournamentDialogTitle),
         content: TextField(
           controller: nameController,
-          decoration: const InputDecoration(labelText: 'Name'),
+          decoration: InputDecoration(labelText: l10n.nameLabel),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l10n.tournamentCancelButton),
           ),
           TextButton(
             onPressed: () {
@@ -82,7 +85,7 @@ class TournamentScreen extends ConsumerWidget {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('Create'),
+            child: Text(l10n.createButton),
           ),
         ],
       ),

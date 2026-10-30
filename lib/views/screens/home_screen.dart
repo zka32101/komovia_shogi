@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../viewmodels/index.dart';
 import 'friends_screen.dart';
 import 'growth_screen.dart';
@@ -20,12 +21,13 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final uid = ref.watch(currentUidProvider);
     final displayName = 'Player ${uid?.substring(0, 6) ?? ''}';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Komovia Shogi'),
+        title: Text(l10n.appTitle),
         actions: [
           if (uid != null)
             Stack(
@@ -78,7 +80,7 @@ class HomeScreen extends ConsumerWidget {
                       children: [
                         _HomeTile(
                           icon: Icons.play_circle_outline,
-                          title: '続きから (Resume game)',
+                          title: l10n.resumeGameTile,
                           onTap: () {
                             ref.read(resumeShogiGameProvider)(activeGame);
                             onPlayShogi();
@@ -91,13 +93,13 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 _HomeTile(
                   icon: Icons.sports_esports,
-                  title: '将棋をプレイ (Play shogi)',
+                  title: l10n.playShogiTile,
                   onTap: onPlayShogi,
                 ),
                 const Divider(),
                 _HomeTile(
                   icon: Icons.group,
-                  title: '対局相手を探す (PvP matching)',
+                  title: l10n.pvpMatchingTile,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -110,7 +112,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 _HomeTile(
                   icon: Icons.trending_up,
-                  title: '成長の記録 (Growth)',
+                  title: l10n.growthTile,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const GrowthScreen()),
@@ -118,7 +120,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 _HomeTile(
                   icon: Icons.people,
-                  title: 'Friends',
+                  title: l10n.friendsTile,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -129,7 +131,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 _HomeTile(
                   icon: Icons.message,
-                  title: 'Messages',
+                  title: l10n.messagesTile,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -142,7 +144,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 _HomeTile(
                   icon: Icons.leaderboard,
-                  title: 'Leaderboard',
+                  title: l10n.leaderboardTile,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const LeaderboardScreen()),
@@ -150,7 +152,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 _HomeTile(
                   icon: Icons.emoji_events,
-                  title: 'Tournaments',
+                  title: l10n.tournamentsTile,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(

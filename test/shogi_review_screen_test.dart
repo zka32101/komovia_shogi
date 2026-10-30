@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:komovia_shogi/main.dart';
 import 'package:komovia_shogi/views/screens/shogi_review_screen.dart';
+import 'package:komovia_shogi/l10n/app_localizations.dart';
 
 /// Drives the real [ShogiGameScreen] to a resignation, then confirms the
 /// new 感想戦 (review) button appears next to the existing share button and
@@ -19,7 +20,10 @@ void main() {
       '感想戦 button is absent while the game is ongoing and appears after resignation, '
       'navigating to ShogiReviewScreen when tapped', (tester) async {
     await tester.pumpWidget(
-      const ProviderScope(child: MaterialApp(home: ShogiGameScreen())),
+      const ProviderScope(child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ShogiGameScreen())),
     );
     await dismissDifficultyPicker(tester);
 
