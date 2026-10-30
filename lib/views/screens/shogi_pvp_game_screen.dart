@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:komovia_core/komovia_core.dart';
@@ -30,6 +32,12 @@ class _ShogiPvpGameScreenState extends ConsumerState<ShogiPvpGameScreen> {
   Square? _selected;
   List<Square> _hints = const [];
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(ref.read(loadShowAttackMapPreferenceProvider)());
+  }
 
   /// [ShogiPvpGame.kifMoves]を初期局面から打ち直して再構成する。
   /// `ShogiPvpGameService._replay`/`resumeShogiGameProvider`と同じロジック
@@ -147,8 +155,23 @@ class _ShogiPvpGameScreenState extends ConsumerState<ShogiPvpGameScreen> {
     final uid = ref.watch(currentUidProvider);
     final gameAsync = ref.watch(shogiPvpGameStreamProvider(widget.gameId));
 
+    final showAttackMap = ref.watch(showAttackMapProvider);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.pvpGameTitle)),
+      appBar: AppBar(
+        title: Text(l10n.pvpGameTitle),
+        actions: [
+          IconButton(
+            onPressed: () => ref.read(toggleShowAttackMapProvider)(),
+            icon: Icon(
+              Icons.visibility,
+              color: showAttackMap ? Colors.orangeAccent : null,
+            ),
+            tooltip: showAttackMap
+                ? l10n.hideAttackMapTooltip
+                : l10n.showAttackMapTooltip,
+          ),
+        ],
+      ),
       body: gameAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text(l10n.loadFailedMessage('$error'))),
@@ -213,6 +236,7 @@ class _ShogiPvpGameScreenState extends ConsumerState<ShogiPvpGameScreen> {
                               position,
                               hints: _hints,
                               selected: _selected,
+                              showAttackMap: showAttackMap,
                             ),
                           ),
                         );
