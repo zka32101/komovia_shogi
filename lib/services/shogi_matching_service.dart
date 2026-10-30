@@ -1,11 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:komovia_core/komovia_core.dart' show MatchCandidate, findBestMatchCandidate;
 
 import '../models/shogi_matching.dart';
 
 /// 実力マッチングEngine。komovia_goの`MatchingService`と同じ設計
 /// （候補選定はトランザクション外、成立の書き込みはトランザクション内で
 /// 候補の状態を再確認してから行い、二重成立を防ぐ）だが、`boardSize`
-/// フィルタは無い（将棋は一盤種のみ）。
+/// フィルタは無い（将棋は一盤種のみ）。候補選定の中核ロジックは
+/// komovia_coreの`findBestMatchCandidate`に委譲（go/shogi/reversiaで
+/// 一字一句重複していたため抽出されたもの）。
 class ShogiMatchingService {
   ShogiMatchingService(this._firestore);
 
@@ -51,23 +54,22 @@ class ShogiMatchingService {
         .where('status', isEqualTo: 'waiting')
         .get();
 
-    ShogiMatchmakingQueueEntry? bestCandidate;
-    int bestDiff = 1 << 30;
+    final entries = {
+      for (final doc in snapshots.docs) doc.id: ShogiMatchmakingQueueEntry.fromFirestore(doc),
+    };
 
-    for (final doc in snapshots.docs) {
-      if (doc.id == uid) continue;
-      final entry = ShogiMatchmakingQueueEntry.fromFirestore(doc);
-      final diff = (entry.rating - rating).abs();
-      if (diff <= maxRatingDiff && diff < bestDiff) {
-        bestCandidate = entry;
-        bestDiff = diff;
-      }
-    }
+    final bestCandidate = findBestMatchCandidate(
+      selfUid: uid,
+      selfRating: rating,
+      maxRatingDiff: maxRatingDiff,
+      candidates: entries.values
+          .map((entry) => MatchCandidate(uid: entry.uid, rating: entry.rating)),
+    );
 
     if (bestCandidate == null) return null;
 
-    final selectedCandidate = bestCandidate;
-    final selectedDiff = bestDiff;
+    final selectedCandidate = entries[bestCandidate.uid]!;
+    final selectedDiff = (selectedCandidate.rating - rating).abs();
     final selfRef = _firestore.collection('shogi_matchmaking_queue').doc(uid);
     final candidateRef =
         _firestore.collection('shogi_matchmaking_queue').doc(selectedCandidate.uid);
