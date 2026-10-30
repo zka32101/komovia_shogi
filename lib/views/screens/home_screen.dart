@@ -8,6 +8,7 @@ import 'growth_screen.dart';
 import 'leaderboard_screen.dart';
 import 'message_threads_screen.dart';
 import 'notification_screen.dart';
+import 'novelty_chess_screen.dart';
 import 'shogi_matching_screen.dart';
 import 'tournament_screen.dart';
 
@@ -97,6 +98,19 @@ class HomeScreen extends ConsumerWidget {
                   onTap: onPlayShogi,
                 ),
                 const Divider(),
+                // 番外編: このアプリ本来の将棋モードとは明確に区別された、
+                // package:chessのルールで指す新規モード。他のモード一覧と
+                // 混ざって見えないよう、独自のサブタイトル付きで分けて表示。
+                _HomeTile(
+                  icon: Icons.extension,
+                  title: l10n.noveltyChessTile,
+                  subtitle: l10n.noveltyChessTileSubtitle,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const NoveltyChessScreen()),
+                  ),
+                ),
+                const Divider(),
                 _HomeTile(
                   icon: Icons.group,
                   title: l10n.pvpMatchingTile,
@@ -168,10 +182,16 @@ class HomeScreen extends ConsumerWidget {
 }
 
 class _HomeTile extends StatelessWidget {
-  const _HomeTile({required this.icon, required this.title, required this.onTap});
+  const _HomeTile({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String title;
+  final String? subtitle;
   final VoidCallback onTap;
 
   @override
@@ -180,6 +200,7 @@ class _HomeTile extends StatelessWidget {
       child: ListTile(
         leading: Icon(icon),
         title: Text(title),
+        subtitle: subtitle == null ? null : Text(subtitle!),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),
