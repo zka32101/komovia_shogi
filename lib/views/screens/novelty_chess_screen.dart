@@ -98,25 +98,23 @@ class _NoveltyChessScreenState extends State<NoveltyChessScreen> {
     });
   }
 
-  String _pieceGlyph(chesslib.Piece piece) {
-    final isWhite = piece.color == chesslib.Color.WHITE;
-    switch (piece.type.name) {
-      case 'p':
-        return isWhite ? '♙' : '♟';
-      case 'n':
-        return isWhite ? '♘' : '♞';
-      case 'b':
-        return isWhite ? '♗' : '♝';
-      case 'r':
-        return isWhite ? '♖' : '♜';
-      case 'q':
-        return isWhite ? '♕' : '♛';
-      case 'k':
-        return isWhite ? '♔' : '♚';
-      default:
-        return '';
-    }
-  }
+  // The hollow "white" glyphs (♔♕...) rendered in white fill vanish on
+  // light squares on many devices' default fonts, and some fonts don't
+  // render the hollow/solid distinction clearly at all - both colors can
+  // end up looking like the same dark shape. Komovia_chess's own
+  // PieceGlyph widget solves this by always using the *solid* glyph for
+  // both colors and relying purely on fill color + a contrasting
+  // outline, not on glyph shape, to tell them apart - same fix here.
+  static const Map<String, String> _solidGlyphs = {
+    'p': '♟︎', // VS15 forces text (not emoji) presentation
+    'n': '♞',
+    'b': '♝',
+    'r': '♜',
+    'q': '♛',
+    'k': '♚',
+  };
+
+  String _pieceGlyph(chesslib.Piece piece) => _solidGlyphs[piece.type.name] ?? '';
 
   String _statusMessage(AppLocalizations l10n) {
     if (_chess.in_checkmate) {
@@ -228,15 +226,11 @@ class _NoveltyChessScreenState extends State<NoveltyChessScreen> {
                                             ),
                                           ),
                                         if (piece != null)
-                                          Text(
-                                            _pieceGlyph(piece),
-                                            style: TextStyle(
-                                              fontSize: squareSize * 0.6,
-                                              color: piece.color ==
-                                                      chesslib.Color.WHITE
-                                                  ? Colors.white
-                                                  : Colors.black,
-                                            ),
+                                          _PieceText(
+                                            glyph: _pieceGlyph(piece),
+                                            isWhite: piece.color ==
+                                                chesslib.Color.WHITE,
+                                            fontSize: squareSize * 0.6,
                                           ),
                                       ],
                                     ),
@@ -255,6 +249,55 @@ class _NoveltyChessScreenState extends State<NoveltyChessScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Draws a chess piece glyph as a filled color on top of a contrasting
+/// outline, so white and black pieces stay clearly distinguishable on any
+/// square color and font (see [NoveltyChessScreen._pieceGlyph]'s doc
+/// comment for why relying on the glyph shape alone isn't enough).
+class _PieceText extends StatelessWidget {
+  const _PieceText({
+    required this.glyph,
+    required this.isWhite,
+    required this.fontSize,
+  });
+
+  final String glyph;
+  final bool isWhite;
+  final double fontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final fill = isWhite ? Colors.white : Colors.black;
+    final outline = isWhite ? Colors.black : const Color(0x99FFFFFF);
+    final strokeWidth = fontSize * (isWhite ? 0.09 : 0.04);
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Text(
+          glyph,
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.bold,
+            foreground: Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = strokeWidth
+              ..strokeJoin = StrokeJoin.round
+              ..color = outline,
+          ),
+        ),
+        Text(
+          glyph,
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.bold,
+            color: fill,
+          ),
+        ),
+      ],
     );
   }
 }
