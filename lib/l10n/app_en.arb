@@ -240,5 +240,11 @@
   },
   "chessStalemateMessage": "Stalemate - it's a draw",
   "chessDrawMessage": "It's a draw",
-  "chessNewGameButton": "New game"
+  "chessNewGameButton": "New game",
+
+  "settingsTile": "Settings",
+  "settingsTitle": "Settings",
+  "avatarSectionLabel": "Avatar",
+  "changeAvatarButton": "Change avatar",
+  "chooseAvatarTitle": "Choose an avatar"
 }

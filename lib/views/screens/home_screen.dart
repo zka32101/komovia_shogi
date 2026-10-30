@@ -9,6 +9,7 @@ import 'leaderboard_screen.dart';
 import 'message_threads_screen.dart';
 import 'notification_screen.dart';
 import 'novelty_chess_screen.dart';
+import 'settings_screen.dart';
 import 'shogi_matching_screen.dart';
 import 'tournament_screen.dart';
 
@@ -25,6 +26,7 @@ class HomeScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final uid = ref.watch(currentUidProvider);
     final displayName = 'Player ${uid?.substring(0, 6) ?? ''}';
+    final avatarIcon = uid == null ? null : ref.watch(userAvatarIconProvider(uid));
 
     return Scaffold(
       appBar: AppBar(
@@ -70,6 +72,21 @@ class HomeScreen extends ConsumerWidget {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                // ユーザー識別エリア: アバター + 表示名。タップで設定画面へ
+                // (アバター変更の入り口はここと設定画面の両方)。
+                _HomeTile(
+                  leadingEmoji: avatarIcon?.emoji,
+                  icon: Icons.settings,
+                  title: displayName,
+                  subtitle: l10n.settingsTile,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SettingsScreen(uid: uid),
+                    ),
+                  ),
+                ),
+                const Divider(),
                 // 中断・再開機能: 進行中の対局があれば「続きから」を一番上に
                 // 出す（無ければ何も表示しない）。
                 Builder(
@@ -187,6 +204,7 @@ class _HomeTile extends StatelessWidget {
     required this.title,
     this.subtitle,
     required this.onTap,
+    this.leadingEmoji,
   });
 
   final IconData icon;
@@ -194,11 +212,18 @@ class _HomeTile extends StatelessWidget {
   final String? subtitle;
   final VoidCallback onTap;
 
+  /// When set (the user-identity tile's resolved avatar), shown in place
+  /// of [icon] — never null for a signed-in user, since
+  /// `userAvatarIconProvider` always resolves to a real icon.
+  final String? leadingEmoji;
+
   @override
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
-        leading: Icon(icon),
+        leading: leadingEmoji != null
+            ? Text(leadingEmoji!, style: const TextStyle(fontSize: 24))
+            : Icon(icon),
         title: Text(title),
         subtitle: subtitle == null ? null : Text(subtitle!),
         trailing: const Icon(Icons.chevron_right),
