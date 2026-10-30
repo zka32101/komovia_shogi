@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 
 import 'firebase_options.dart';
 import 'l10n/app_localizations.dart';
+import 'services/event_config_service.dart';
 import 'viewmodels/index.dart';
 import 'views/screens/home_screen.dart';
 import 'views/screens/onboarding_screen.dart';
@@ -31,7 +32,14 @@ void main() async {
     // Placeholder Firebase config won't actually initialize against a real
     // backend; swallow so the shogi demo screen still runs standalone.
   }
-  runApp(const ProviderScope(child: KomoviaShogiApp()));
+  // 期間限定イベントの開催期間（Remote Config）。キャッシュ値を有効化し、
+  // 最新値の取得はバックグラウンド。失敗しても全イベント非表示で起動する。
+  final eventConfig = EventConfigService();
+  await eventConfig.initialize();
+  runApp(ProviderScope(
+    overrides: [eventConfigServiceProvider.overrideWithValue(eventConfig)],
+    child: const KomoviaShogiApp(),
+  ));
 }
 
 class KomoviaShogiApp extends StatelessWidget {

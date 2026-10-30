@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:komovia_core/komovia_core.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../viewmodels/index.dart';
 import 'friends_screen.dart';
 import 'growth_screen.dart';
+import 'hybrid_battle_screen.dart';
 import 'leaderboard_screen.dart';
 import 'message_threads_screen.dart';
 import 'notification_screen.dart';
@@ -116,18 +118,50 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 const Divider(),
                 // 番外編: このアプリ本来の将棋モードとは明確に区別された、
-                // package:chessのルールで指す新規モード。他のモード一覧と
-                // 混ざって見えないよう、独自のサブタイトル付きで分けて表示。
-                _HomeTile(
-                  icon: Icons.extension,
-                  title: l10n.noveltyChessTile,
-                  subtitle: l10n.noveltyChessTileSubtitle,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const NoveltyChessScreen()),
-                  ),
+                // 期間限定イベントのモード群。Remote Configで開催期間が
+                // 設定され、かつ期間内のときだけ表示する（未設定なら非表示）。
+                Builder(
+                  builder: (context) {
+                    final chessEvent = ref.watch(noveltyChessEventProvider);
+                    final hybridEvent = ref.watch(hybridBattleEventProvider);
+                    if (chessEvent == null && hybridEvent == null) {
+                      return const SizedBox.shrink();
+                    }
+                    return Column(
+                      children: [
+                        if (chessEvent != null)
+                          _HomeTile(
+                            key: const Key('novelty_chess_tile'),
+                            icon: Icons.extension,
+                            title: l10n.noveltyChessTile,
+                            subtitle: _eventSubtitle(
+                                l10n, l10n.noveltyChessTileSubtitle, chessEvent),
+                            badge: l10n.eventLimitedBadge,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const NoveltyChessScreen()),
+                            ),
+                          ),
+                        if (hybridEvent != null)
+                          _HomeTile(
+                            key: const Key('hybrid_battle_tile'),
+                            icon: Icons.compare_arrows,
+                            title: l10n.hybridBattleTile,
+                            subtitle: _eventSubtitle(l10n,
+                                l10n.hybridBattleTileSubtitle, hybridEvent),
+                            badge: l10n.eventLimitedBadge,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const HybridBattleScreen()),
+                            ),
+                          ),
+                        const Divider(),
+                      ],
+                    );
+                  },
                 ),
-                const Divider(),
                 _HomeTile(
                   icon: Icons.group,
                   title: l10n.pvpMatchingTile,
@@ -196,16 +230,30 @@ class HomeScreen extends ConsumerWidget {
             ),
     );
   }
+
+  String _eventSubtitle(
+      AppLocalizations l10n, String description, EventWindow window) {
+    final left = window.remaining();
+    final hint = left.inDays >= 1
+        ? l10n.eventRemainingDays(left.inDays)
+        : l10n.eventRemainingHours(left.inHours < 1 ? 1 : left.inHours);
+    return '$description\n$hint';
+  }
 }
 
 class _HomeTile extends StatelessWidget {
   const _HomeTile({
+    super.key,
     required this.icon,
     required this.title,
     this.subtitle,
     required this.onTap,
     this.leadingEmoji,
+    this.badge,
   });
+
+  /// 期間限定イベントのタイルに付ける「期間限定」バッジの文言。
+  final String? badge;
 
   final IconData icon;
   final String title;
@@ -224,7 +272,22 @@ class _HomeTile extends StatelessWidget {
         leading: leadingEmoji != null
             ? Text(leadingEmoji!, style: const TextStyle(fontSize: 24))
             : Icon(icon),
-        title: Text(title),
+        title: badge == null
+            ? Text(title)
+            : Row(
+                children: [
+                  Flexible(child: Text(title)),
+                  const SizedBox(width: 8),
+                  Chip(
+                    label: Text(badge!),
+                    labelStyle: const TextStyle(fontSize: 11, color: Colors.white),
+                    backgroundColor: Colors.red,
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    padding: EdgeInsets.zero,
+                  ),
+                ],
+              ),
         subtitle: subtitle == null ? null : Text(subtitle!),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,

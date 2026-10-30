@@ -246,5 +246,23 @@
   "settingsTitle": "Settings",
   "avatarSectionLabel": "Avatar",
   "changeAvatarButton": "Change avatar",
-  "chooseAvatarTitle": "Choose an avatar"
+  "chooseAvatarTitle": "Choose an avatar",
+
+  "eventLimitedBadge": "Limited time",
+  "eventRemainingDays": "{days} days left",
+  "eventRemainingHours": "{hours} hours left",
+  "hybridBattleTile": "Bonus event: Shogi pieces vs Chess pieces",
+  "hybridBattleTileSubtitle": "Limited-time event: shogi and chess armies on one 9x9 board (pass-and-play)",
+  "hybridBattleTitle": "Shogi vs Chess pieces",
+  "hybridBattleRules": "Bottom: shogi pieces (shogi moves and promotion). Top: chess pieces (chess moves and promotion). Only the chess side may drop captured pieces. The chess king is judged by shogi's tsumi (no legal moves = loss); the shogi king is judged by chess checkmate/stalemate.",
+  "hybridShogiSideLabel": "Shogi side",
+  "hybridChessSideLabel": "Chess side",
+  "hybridTurnMessage": "{side} to move{checkSuffix}",
+  "hybridWinMessage": "{winner} wins",
+  "hybridDrawMessage": "Stalemate (draw)",
+  "hybridChessHandLabel": "Chess side's pieces in hand",
+  "hybridPromoteQuestion": "Promote?",
+  "hybridPromoteYes": "Promote",
+  "hybridPromoteNo": "Don't promote",
+  "hybridChessPromotionTitle": "Choose a promotion piece"
 }
