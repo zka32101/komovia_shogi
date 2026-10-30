@@ -218,5 +218,27 @@
   "difficultyHardDescription": "しっかり読んで指します。手応えのある相手です。",
 
   "showAttackMapTooltip": "Show attack map",
-  "hideAttackMapTooltip": "Hide attack map"
+  "hideAttackMapTooltip": "Hide attack map",
+
+  "noveltyChessTile": "Bonus mode: Play chess",
+  "noveltyChessTileSubtitle": "A fun side mode with different rules from shogi (pass the device to play 2-player)",
+  "noveltyChessTitle": "Bonus mode: Chess",
+  "noveltyChessSubtitle": "This isn't shogi. It's a small bonus mode played by standard chess rules - pass the device back and forth between two players.",
+  "chessWhiteLabel": "White",
+  "chessBlackLabel": "Black",
+  "chessCheckSuffix": " (check)",
+  "chessTurnMessage": "{side} to move{checkSuffix}",
+  "@chessTurnMessage": {
+    "placeholders": {
+      "side": { "type": "String" },
+      "checkSuffix": { "type": "String" }
+    }
+  },
+  "chessCheckmateMessage": "Checkmate! {winner} wins",
+  "@chessCheckmateMessage": {
+    "placeholders": { "winner": { "type": "String" } }
+  },
+  "chessStalemateMessage": "Stalemate - it's a draw",
+  "chessDrawMessage": "It's a draw",
+  "chessNewGameButton": "New game"
 }

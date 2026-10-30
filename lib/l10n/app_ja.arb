@@ -218,5 +218,27 @@
   "difficultyHardDescription": "しっかり読んで指します。手応えのある相手です。",
 
   "showAttackMapTooltip": "効きを表示",
-  "hideAttackMapTooltip": "効き非表示"
+  "hideAttackMapTooltip": "効き非表示",
+
+  "noveltyChessTile": "番外編：チェスを指す",
+  "noveltyChessTileSubtitle": "将棋とは別ルールのお楽しみモード（2人で画面を回して対局）",
+  "noveltyChessTitle": "番外編：チェス",
+  "noveltyChessSubtitle": "これは将棋ではありません。標準的なチェスのルールで指す、ちょっとした番外編モードです。1台の画面を2人で交代しながら指します。",
+  "chessWhiteLabel": "白",
+  "chessBlackLabel": "黒",
+  "chessCheckSuffix": "（王手）",
+  "chessTurnMessage": "{side}の番です{checkSuffix}",
+  "@chessTurnMessage": {
+    "placeholders": {
+      "side": { "type": "String" },
+      "checkSuffix": { "type": "String" }
+    }
+  },
+  "chessCheckmateMessage": "チェックメイト！{winner}の勝ちです",
+  "@chessCheckmateMessage": {
+    "placeholders": { "winner": { "type": "String" } }
+  },
+  "chessStalemateMessage": "ステイルメイト（引き分け）です",
+  "chessDrawMessage": "引き分けです",
+  "chessNewGameButton": "新しい対局"
 }
