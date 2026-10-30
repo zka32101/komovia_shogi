@@ -240,5 +240,11 @@
   },
   "chessStalemateMessage": "ステイルメイト（引き分け）です",
   "chessDrawMessage": "引き分けです",
-  "chessNewGameButton": "新しい対局"
+  "chessNewGameButton": "新しい対局",
+
+  "settingsTile": "設定 (Settings)",
+  "settingsTitle": "設定",
+  "avatarSectionLabel": "アバター",
+  "changeAvatarButton": "アバターを変更",
+  "chooseAvatarTitle": "アバターを選択"
 }
