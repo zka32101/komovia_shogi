@@ -126,6 +126,13 @@ service cloud.firestore {
          resource.data.status == 'waiting' && request.resource.data.status == 'matched');
     }
 
+    // ---------------- active_shogi_games/{uid} ----------------
+    // ActiveShogiGameService.save/getActive/clear: suspend/resume state for
+    // an in-progress AI game, keyed by the owner's own uid.
+    match /active_shogi_games/{uid} {
+      allow read, write, delete: if isOwner(uid);
+    }
+
     // ---------------- shogi_match_results/{matchId} ----------------
     match /shogi_match_results/{matchId} {
       allow read: if isEither(resource.data.player1Uid, resource.data.player2Uid);
