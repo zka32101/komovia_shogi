@@ -246,5 +246,27 @@
   "settingsTitle": "設定",
   "avatarSectionLabel": "アバター",
   "changeAvatarButton": "アバターを変更",
-  "chooseAvatarTitle": "アバターを選択"
+  "chooseAvatarTitle": "アバターを選択",
+
+  "eventLimitedBadge": "期間限定",
+  "eventRemainingDays": "残り{days}日",
+  "@eventRemainingDays": {"placeholders": {"days": {"type": "int"}}},
+  "eventRemainingHours": "残り{hours}時間",
+  "@eventRemainingHours": {"placeholders": {"hours": {"type": "int"}}},
+  "hybridBattleTile": "番外編：将棋駒 vs チェス駒",
+  "hybridBattleTileSubtitle": "将棋の駒とチェスの駒が9x9盤で戦う期間限定イベント（2人で画面を回して対局）",
+  "hybridBattleTitle": "将棋駒 vs チェス駒",
+  "hybridBattleRules": "下側は将棋の駒（本将棋の動き・成り）、上側はチェスの駒（チェスの動き・プロモーション）。取った駒を打てるのはチェス側だけです。チェス側のキングは将棋の「詰み」、将棋側の玉はチェスの「チェックメイト／ステイルメイト」で判定します。",
+  "hybridShogiSideLabel": "将棋側",
+  "hybridChessSideLabel": "チェス側",
+  "hybridTurnMessage": "{side}の番です{checkSuffix}",
+  "@hybridTurnMessage": {"placeholders": {"side": {"type": "String"}, "checkSuffix": {"type": "String"}}},
+  "hybridWinMessage": "{winner}の勝ちです",
+  "@hybridWinMessage": {"placeholders": {"winner": {"type": "String"}}},
+  "hybridDrawMessage": "ステイルメイト（引き分け）です",
+  "hybridChessHandLabel": "チェス側の持ち駒",
+  "hybridPromoteQuestion": "成りますか？",
+  "hybridPromoteYes": "成る",
+  "hybridPromoteNo": "成らない",
+  "hybridChessPromotionTitle": "プロモーションする駒を選んでください"
 }
