@@ -20,19 +20,17 @@ void main() {
       (tester) async {
     await pumpScreen(tester);
 
-    // White back rank (rank 1) and black back rank (rank 8).
-    expect(find.text('♖'), findsNWidgets(2));
-    expect(find.text('♘'), findsNWidgets(2));
-    expect(find.text('♗'), findsNWidgets(2));
-    expect(find.text('♕'), findsOneWidget);
-    expect(find.text('♔'), findsOneWidget);
-    expect(find.text('♙'), findsNWidgets(8));
-    expect(find.text('♜'), findsNWidgets(2));
-    expect(find.text('♞'), findsNWidgets(2));
-    expect(find.text('♝'), findsNWidgets(2));
-    expect(find.text('♛'), findsOneWidget);
-    expect(find.text('♚'), findsOneWidget);
-    expect(find.text('♟'), findsNWidgets(8));
+    // Both colors render the same solid glyph (filled + outline Text pair
+    // per piece, see _PieceText) so white/black pieces stay visually
+    // distinguishable on-device by color, not by glyph shape - counts
+    // below are per-piece-type across both colors, doubled for the
+    // stroke+fill pair each piece draws.
+    expect(find.text('♜'), findsNWidgets(4 * 2)); // 2 white + 2 black rooks
+    expect(find.text('♞'), findsNWidgets(4 * 2));
+    expect(find.text('♝'), findsNWidgets(4 * 2));
+    expect(find.text('♛'), findsNWidgets(2 * 2));
+    expect(find.text('♚'), findsNWidgets(2 * 2));
+    expect(find.text('♟︎'), findsNWidgets(16 * 2));
 
     // White to move, no check yet.
     expect(find.text('白の番です'), findsOneWidget);
@@ -52,16 +50,16 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(const Key('chess_square_e2')),
-        matching: find.text('♙'),
+        matching: find.text('♟︎'),
       ),
       findsNothing,
     );
     expect(
       find.descendant(
         of: find.byKey(const Key('chess_square_e4')),
-        matching: find.text('♙'),
+        matching: find.text('♟︎'),
       ),
-      findsOneWidget,
+      findsNWidgets(2),
     );
     expect(find.text('黒の番です'), findsOneWidget);
   });
@@ -80,14 +78,14 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(const Key('chess_square_e2')),
-        matching: find.text('♙'),
+        matching: find.text('♟︎'),
       ),
-      findsOneWidget,
+      findsNWidgets(2),
     );
     expect(
       find.descendant(
         of: find.byKey(const Key('chess_square_e5')),
-        matching: find.text('♙'),
+        matching: find.text('♟︎'),
       ),
       findsNothing,
     );
@@ -137,6 +135,6 @@ void main() {
     await tester.pump();
 
     expect(find.text('白の番です'), findsOneWidget);
-    expect(find.text('♙'), findsNWidgets(8));
+    expect(find.text('♟︎'), findsNWidgets(16 * 2));
   });
 }
