@@ -3,13 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:komovia_shogi/main.dart';
 import 'package:komovia_shogi/viewmodels/index.dart';
+import 'package:komovia_shogi/l10n/app_localizations.dart';
 
 void main() {
   testWidgets(
       'shows the difficulty picker on a brand-new game (no active game yet)',
       (tester) async {
     await tester.pumpWidget(
-      const ProviderScope(child: MaterialApp(home: ShogiGameScreen())),
+      const ProviderScope(child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ShogiGameScreen())),
     );
     await tester.pump();
 
@@ -26,7 +30,10 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: ShogiGameScreen()),
+        child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ShogiGameScreen()),
       ),
     );
     await tester.pump();

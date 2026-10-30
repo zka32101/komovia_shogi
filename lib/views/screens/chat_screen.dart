@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../viewmodels/index.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -66,7 +67,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration: const InputDecoration(hintText: 'Message'),
+                    decoration: InputDecoration(
+                      hintText: AppLocalizations.of(context)!.messageHint,
+                    ),
                   ),
                 ),
                 IconButton(

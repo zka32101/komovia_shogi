@@ -8,6 +8,7 @@ import 'package:komovia_shogi/services/shogi_pvp_game_service.dart';
 import 'package:komovia_shogi/viewmodels/auth_provider.dart';
 import 'package:komovia_shogi/viewmodels/shogi_pvp_game_provider.dart';
 import 'package:komovia_shogi/views/screens/shogi_pvp_game_screen.dart';
+import 'package:komovia_shogi/l10n/app_localizations.dart';
 
 void main() {
   Future<String> seedGame(ShogiPvpGameService service) async {
@@ -32,7 +33,10 @@ void main() {
           shogiPvpGameServiceProvider.overrideWithValue(service),
           currentUidProvider.overrideWithValue(uid),
         ],
-        child: MaterialApp(home: ShogiPvpGameScreen(gameId: gameId)),
+        child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ShogiPvpGameScreen(gameId: gameId)),
       ),
     );
     await tester.pump();
@@ -141,7 +145,10 @@ void main() {
           shogiPvpGameServiceProvider.overrideWithValue(service),
           currentUidProvider.overrideWithValue(null),
         ],
-        child: MaterialApp(home: ShogiPvpGameScreen(gameId: gameId)),
+        child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ShogiPvpGameScreen(gameId: gameId)),
       ),
     );
     await tester.pump();

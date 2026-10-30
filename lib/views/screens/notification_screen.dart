@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../viewmodels/index.dart';
 import 'shogi_pvp_game_screen.dart';
 
@@ -11,11 +12,12 @@ class NotificationScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final notifications = ref.watch(notificationsStreamProvider(uid)).value ?? [];
     return Scaffold(
-      appBar: AppBar(title: const Text('Notifications')),
+      appBar: AppBar(title: Text(l10n.notificationsTitle)),
       body: notifications.isEmpty
-          ? const Center(child: Text('No notifications'))
+          ? Center(child: Text(l10n.noNotificationsMessage))
           : ListView(
               children: notifications
                   .map(

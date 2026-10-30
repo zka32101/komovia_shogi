@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:komovia_shogi/main.dart';
 import 'package:komovia_shogi/views/screens/shogi_review_screen.dart';
+import 'package:komovia_shogi/l10n/app_localizations.dart';
 
 /// 「正確さ訴求」: 終局後、感想戦ボタンを押さずとも「あなたの正確度」が
 /// 自動で表示されることの回帰テスト。shogi_review_screen_test.dartと同じ
@@ -39,7 +40,10 @@ void main() {
       'shows a loading indicator immediately after resignation, then the '
       'accuracy badge once computed (100% for a 0-move game)', (tester) async {
     await tester.pumpWidget(
-      const ProviderScope(child: MaterialApp(home: ShogiGameScreen())),
+      const ProviderScope(child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ShogiGameScreen())),
     );
     await dismissDifficultyPicker(tester);
     await resign(tester);
@@ -54,7 +58,10 @@ void main() {
 
   testWidgets('tapping the accuracy badge navigates to ShogiReviewScreen', (tester) async {
     await tester.pumpWidget(
-      const ProviderScope(child: MaterialApp(home: ShogiGameScreen())),
+      const ProviderScope(child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ShogiGameScreen())),
     );
     await dismissDifficultyPicker(tester);
     await resign(tester);
@@ -68,7 +75,10 @@ void main() {
 
   testWidgets('starting a new game clears the accuracy badge', (tester) async {
     await tester.pumpWidget(
-      const ProviderScope(child: MaterialApp(home: ShogiGameScreen())),
+      const ProviderScope(child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ShogiGameScreen())),
     );
     await dismissDifficultyPicker(tester);
     await resign(tester);

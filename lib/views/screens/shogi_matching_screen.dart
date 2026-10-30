@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/shogi_matching.dart';
 import '../../viewmodels/index.dart';
 import 'shogi_pvp_game_screen.dart';
@@ -30,18 +31,19 @@ class _ShogiMatchingScreenState extends ConsumerState<ShogiMatchingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('対局相手を探す')),
+      appBar: AppBar(title: Text(l10n.findOpponentTitle)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('レートの近い相手とマッチングします。'),
+            Text(l10n.matchingDescription),
             const SizedBox(height: 8),
-            _buildMyRating(),
+            _buildMyRating(l10n),
             const SizedBox(height: 20),
-            if (_foundMatch != null) _buildMatchFoundCard(_foundMatch!),
+            if (_foundMatch != null) _buildMatchFoundCard(l10n, _foundMatch!),
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -60,35 +62,35 @@ class _ShogiMatchingScreenState extends ConsumerState<ShogiMatchingScreen> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('対局相手を探す'),
+                    : Text(l10n.findOpponentButton),
               ),
             ),
             const SizedBox(height: 32),
             Text(
-              '対局履歴',
+              l10n.matchHistoryLabel,
               style: Theme.of(context)
                   .textTheme
                   .titleMedium
                   ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            _buildMatchHistory(),
+            _buildMatchHistory(l10n),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMyRating() {
+  Widget _buildMyRating(AppLocalizations l10n) {
     final entry = ref.watch(myLeaderboardEntryProvider).valueOrNull;
     final rating = entry?.rating ?? 1200;
     return Text(
-      'あなたのレート: $rating',
+      l10n.yourRatingLabel(rating),
       style: const TextStyle(fontWeight: FontWeight.bold),
     );
   }
 
-  Widget _buildMatchFoundCard(ShogiMatchResult match) {
+  Widget _buildMatchFoundCard(AppLocalizations l10n, ShogiMatchResult match) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -103,7 +105,10 @@ class _ShogiMatchingScreenState extends ConsumerState<ShogiMatchingScreen> {
             children: [
               const Icon(Icons.handshake),
               const SizedBox(width: 8),
-              const Text('対局相手が見つかりました', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                l10n.opponentFoundLabel,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -113,7 +118,7 @@ class _ShogiMatchingScreenState extends ConsumerState<ShogiMatchingScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'レート差: ${match.ratingDiff}',
+            l10n.ratingDiffLabel(match.ratingDiff),
             style: Theme.of(context).textTheme.bodySmall,
           ),
           if (match.gameId == null) ...[
@@ -128,7 +133,7 @@ class _ShogiMatchingScreenState extends ConsumerState<ShogiMatchingScreen> {
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('対局を開始する'),
+                    : Text(l10n.startGameButton),
               ),
             ),
           ],
@@ -137,12 +142,12 @@ class _ShogiMatchingScreenState extends ConsumerState<ShogiMatchingScreen> {
     );
   }
 
-  Widget _buildMatchHistory() {
+  Widget _buildMatchHistory(AppLocalizations l10n) {
     final historyAsync = ref.watch(shogiMatchHistoryProvider(widget.uid));
     return historyAsync.when(
       data: (matches) {
         if (matches.isEmpty) {
-          return const Text('対局履歴はまだありません');
+          return Text(l10n.noMatchHistoryMessage);
         }
         return Column(
           children: matches.map((match) {
@@ -156,7 +161,7 @@ class _ShogiMatchingScreenState extends ConsumerState<ShogiMatchingScreen> {
               child: ListTile(
                 leading: const Icon(Icons.person),
                 title: Text(opponentName),
-                subtitle: Text('レート: $opponentRating'),
+                subtitle: Text(l10n.opponentRatingLabel(opponentRating)),
                 trailing: match.gameId != null
                     ? const Icon(Icons.arrow_forward_ios, size: 16)
                     : null,
@@ -175,7 +180,7 @@ class _ShogiMatchingScreenState extends ConsumerState<ShogiMatchingScreen> {
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Text(
-        'エラー: $err',
+        l10n.errorLabel('$err'),
         style: TextStyle(color: Theme.of(context).colorScheme.error),
       ),
     );
@@ -203,16 +208,19 @@ class _ShogiMatchingScreenState extends ConsumerState<ShogiMatchingScreen> {
       );
 
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
         _foundMatch = match;
-        _error = match == null ? '相手が見つかりませんでした。しばらくしてからもう一度お試しください' : null;
+        _error = match == null ? l10n.noOpponentFoundMessage : null;
       });
 
       if (match != null) {
         ref.invalidate(shogiMatchHistoryProvider(widget.uid));
       }
     } catch (e) {
-      if (mounted) setState(() => _error = 'エラー: $e');
+      if (mounted) {
+        setState(() => _error = AppLocalizations.of(context)!.errorLabel('$e'));
+      }
     } finally {
       if (mounted) setState(() => _isSearching = false);
     }
@@ -237,11 +245,13 @@ class _ShogiMatchingScreenState extends ConsumerState<ShogiMatchingScreen> {
 
       await ref.read(attachShogiGameToMatchProvider)(match.id, game.id);
 
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       try {
         await ref.read(notificationServiceProvider).send(
               uid: opponentUid,
-              title: '${widget.displayName}さんと対局が始まりました',
-              body: 'タップして対局を開く',
+              title: l10n.gameStartedNotificationTitle(widget.displayName),
+              body: l10n.gameStartedNotificationBody,
               type: 'pvp_challenge',
               data: {'gameId': game.id},
             );
@@ -257,7 +267,11 @@ class _ShogiMatchingScreenState extends ConsumerState<ShogiMatchingScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('対局の開始に失敗しました: $e')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.gameStartFailedMessage('$e'),
+            ),
+          ),
         );
       }
     } finally {
