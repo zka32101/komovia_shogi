@@ -292,5 +292,41 @@
     "placeholders": {
       "count": {"type": "int"}
     }
-  }
+  },
+
+  "repertoireTile": "定跡訓練 (Repertoire)",
+  "repertoireListTitle": "Opening repertoire",
+  "repertoireEmpty": "No repertoires yet. Create one with the + button.",
+  "repertoireCreate": "Create repertoire",
+  "repertoireNameLabel": "Name (e.g. Yagura vs rapid attack)",
+  "repertoireSideFirst": "Sente",
+  "repertoireSideSecond": "Gote",
+  "repertoireRename": "Rename",
+  "repertoireDelete": "Delete",
+  "repertoireDeleteConfirm": "Delete this repertoire?",
+  "repertoireCancel": "Cancel",
+  "repertoireSave": "Save",
+  "repertoireAddLine": "Add line",
+  "repertoireTrainDue": "Train lines due for review",
+  "repertoireNoLines": "No lines",
+  "repertoireDueBadge": "Due",
+  "repertoireDueCount": "{count} due",
+  "repertoireLineStats": "{moves} moves · practiced {practiced}x · first-try {correct}x",
+  "repertoireLineEditorTitle": "Enter line",
+  "repertoireLineNameLabel": "Line name",
+  "repertoireUndo": "Undo",
+  "repertoireNoMovesYet": "Tap pieces on the board to enter the line.",
+  "repertoireLineSaved": "Line saved",
+  "repertoireTrainingTitle": "Repertoire training",
+  "repertoireYourMove": "Your move. Play the repertoire move.",
+  "repertoireCorrect": "Correct!",
+  "repertoireWrong": "Not quite. The correct move is {move}. Try again.",
+  "repertoireFinishedPerfect": "You played the whole line without a mistake!",
+  "repertoireFinishedWithMistakes": "Line complete ({count} mistakes). Marked for review.",
+  "repertoireBack": "Back",
+  "repertoireShowAnswer": "Show answer",
+  "repertoirePromoteQuestion": "Promote?",
+  "repertoirePromote": "Promote",
+  "repertoireNoPromote": "Don't promote",
+  "repertoireNoDueLines": "No lines are due for review"
 }

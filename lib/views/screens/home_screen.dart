@@ -10,6 +10,7 @@ import 'hybrid_battle_screen.dart';
 import 'leaderboard_screen.dart';
 import 'message_threads_screen.dart';
 import 'notification_screen.dart';
+import 'repertoire_list_screen.dart';
 import 'novelty_chess_screen.dart';
 import 'settings_screen.dart';
 import 'shogi_matching_screen.dart';
@@ -185,6 +186,16 @@ class HomeScreen extends ConsumerWidget {
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const GrowthScreen()),
+                  ),
+                ),
+                _HomeTile(
+                  icon: Icons.menu_book,
+                  title: l10n.repertoireTile,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => RepertoireListScreen(uid: uid),
+                    ),
                   ),
                 ),
                 _HomeTile(

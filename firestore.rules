@@ -30,6 +30,12 @@ service cloud.firestore {
       allow write: if isOwner(uid);
     }
 
+    // ---------------- users/{uid}/repertoires/{repertoireId} ----------------
+    // 定跡レパートリー（手順は埋め込みリスト）。本人のみ読み書き可。
+    match /users/{uid}/repertoires/{repertoireId} {
+      allow read, write: if isOwner(uid);
+    }
+
     // ---------------- users/{uid}/friends/{friendUid} ----------------
     match /users/{uid}/friends/{friendUid} {
       allow read: if isOwner(uid);
