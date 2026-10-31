@@ -10,6 +10,7 @@ import 'package:komovia_shogi/services/user_profile_service.dart';
 import 'package:komovia_shogi/src/cosmetics/avatar_frames.dart';
 import 'package:komovia_shogi/viewmodels/leaderboard_provider.dart';
 import 'package:komovia_shogi/viewmodels/user_profile_provider.dart';
+import 'package:komovia_shogi/viewmodels/auth_provider.dart';
 import 'package:komovia_shogi/views/screens/settings_screen.dart';
 import 'package:komovia_shogi/views/widgets/avatar_frame_picker.dart';
 import 'package:komovia_shogi/views/widgets/framed_avatar.dart';
@@ -144,6 +145,7 @@ void main() {
     Future<void> pump(WidgetTester tester, FakeFirebaseFirestore fs) async {
       await tester.pumpWidget(ProviderScope(
         overrides: [
+          linkedEmailProvider.overrideWithValue(null),
           userProfileServiceProvider
               .overrideWithValue(UserProfileService(firestore: fs)),
           leaderboardServiceProvider

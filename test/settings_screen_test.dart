@@ -7,6 +7,7 @@ import 'package:komovia_shogi/services/leaderboard_service.dart';
 import 'package:komovia_shogi/services/user_profile_service.dart';
 import 'package:komovia_shogi/viewmodels/leaderboard_provider.dart';
 import 'package:komovia_shogi/viewmodels/user_profile_provider.dart';
+import 'package:komovia_shogi/viewmodels/auth_provider.dart';
 import 'package:komovia_shogi/views/screens/settings_screen.dart';
 
 void main() {
@@ -18,6 +19,7 @@ void main() {
     return tester.pumpWidget(
       ProviderScope(
         overrides: [
+          linkedEmailProvider.overrideWithValue(null),
           userProfileServiceProvider
               .overrideWithValue(UserProfileService(firestore: firestore)),
           leaderboardServiceProvider
