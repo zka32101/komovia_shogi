@@ -373,5 +373,11 @@
   "tsumeRushEndTimeUp": "時間切れ",
   "tsumeRushEndLives": "ライフがなくなりました",
   "tsumeRushEndAll": "全問出題しました",
-  "tsumeRushAgain": "もう一度挑戦"
+  "tsumeRushAgain": "もう一度挑戦",
+  "pvpOpponentInactiveMessage": "相手の応答が{hours}時間以上ありません",
+  "pvpClaimForfeitButton": "不戦勝を申請する",
+  "pvpClaimForfeitConfirmTitle": "不戦勝を申請しますか？",
+  "pvpClaimForfeitConfirmContent": "相手が長時間指していないため、この対局をあなたの勝ちとして終了します。",
+  "pvpForfeitResultMessage": "相手の放置により不戦勝となりました",
+  "@pvpOpponentInactiveMessage": {"placeholders": {"hours": {"type": "int"}}}
 }

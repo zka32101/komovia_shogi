@@ -162,8 +162,17 @@ service cloud.firestore {
          request.auth.uid == request.resource.data.goteUid);
       // ShogiPvpGameService.applyMove/resign: either participant may
       // update kifMoves/isSenteTurn/movesCount/status/winnerUid/result.
+      // claimAbandonmentForfeit: a 'forfeit' result may only be written by
+      // the WAITING participant (not the one whose turn it is), naming
+      // themself the winner, after 24h of inactivity (mirrors
+      // ShogiPvpGameService.abandonmentPolicy).
       allow update: if isEither(resource.data.senteUid, resource.data.goteUid) &&
-        onlyChanged(['kifMoves', 'isSenteTurn', 'movesCount', 'status', 'winnerUid', 'result', 'updatedAt']);
+        onlyChanged(['kifMoves', 'isSenteTurn', 'movesCount', 'status', 'winnerUid', 'result', 'updatedAt']) &&
+        (request.resource.data.get('result', null) != 'forfeit' ||
+          (resource.data.status == 'active' &&
+           request.resource.data.winnerUid == request.auth.uid &&
+           request.auth.uid == (resource.data.isSenteTurn ? resource.data.goteUid : resource.data.senteUid) &&
+           request.time >= resource.data.updatedAt + duration.value(24, 'h')));
       allow delete: if false;
     }
   }

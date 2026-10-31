@@ -7,6 +7,7 @@ import 'package:komovia_shogi/komovia_shogi.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/shogi_pvp_game.dart';
+import '../../services/shogi_pvp_game_service.dart';
 import '../../viewmodels/index.dart';
 
 /// PvP対局画面。`ShogiGameScreen`（main.dart、AI対局）と同じタップ操作
@@ -21,8 +22,7 @@ class ShogiPvpGameScreen extends ConsumerStatefulWidget {
   final String gameId;
 
   @override
-  ConsumerState<ShogiPvpGameScreen> createState() =>
-      _ShogiPvpGameScreenState();
+  ConsumerState<ShogiPvpGameScreen> createState() => _ShogiPvpGameScreenState();
 }
 
 class _ShogiPvpGameScreenState extends ConsumerState<ShogiPvpGameScreen> {
@@ -136,9 +136,36 @@ class _ShogiPvpGameScreenState extends ConsumerState<ShogiPvpGameScreen> {
     await ref.read(resignShogiPvpGameProvider)(widget.gameId, uid);
   }
 
+  Future<void> _confirmClaimForfeit(String uid) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.pvpClaimForfeitConfirmTitle),
+        content: Text(l10n.pvpClaimForfeitConfirmContent),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.pvpResignCancelButton),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.pvpClaimForfeitButton),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(claimShogiPvpAbandonmentProvider)(widget.gameId, uid);
+  }
+
   String _statusText(AppLocalizations l10n, ShogiPvpGame pvp, Side? humanSide) {
     if (pvp.isFinished) {
       if (pvp.winnerUid == null) return l10n.gameEndedMessage;
+      if (pvp.result == 'forfeit' &&
+          ref.read(currentUidProvider) == pvp.winnerUid) {
+        return l10n.pvpForfeitResultMessage;
+      }
       final uid = ref.read(currentUidProvider);
       if (uid == pvp.winnerUid) return l10n.youWonMessage;
       return l10n.youLostMessage;
@@ -174,7 +201,8 @@ class _ShogiPvpGameScreenState extends ConsumerState<ShogiPvpGameScreen> {
       ),
       body: gameAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text(l10n.loadFailedMessage('$error'))),
+        error: (error, _) =>
+            Center(child: Text(l10n.loadFailedMessage('$error'))),
         data: (pvp) {
           if (uid == null) {
             return Center(child: Text(l10n.loginRequiredMessage));
@@ -183,75 +211,103 @@ class _ShogiPvpGameScreenState extends ConsumerState<ShogiPvpGameScreen> {
           final humanSide = _humanSide(pvp, uid);
 
           return SafeArea(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _statusText(l10n, pvp, humanSide),
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  if (_errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        _errorMessage!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
+            child: SingleChildScrollView(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _statusText(l10n, pvp, humanSide),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    if (_errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          _errorMessage!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
                         ),
                       ),
-                    ),
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final boardSize =
-                            constraints.maxWidth.clamp(0, 400).toDouble();
-                        return GestureDetector(
-                          key: const Key('shogi_pvp_board_gesture_detector'),
-                          onTapUp: (details) {
-                            final square = _renderer.squareAt(
-                              BoardOffset(
-                                details.localPosition.dx,
-                                details.localPosition.dy,
-                              ),
-                              BoardSize(boardSize, boardSize),
-                              position,
-                            );
-                            if (square != null) {
-                              _onTapSquare(
-                                square,
-                                pvp,
-                                position,
-                                historyKeys,
-                                uid,
-                              );
-                            }
-                          },
-                          child: SizedBox(
-                            width: boardSize,
-                            child: _renderer.build(
-                              position,
-                              hints: _hints,
-                              selected: _selected,
-                              showAttackMap: showAttackMap,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  if (pvp.isActive && humanSide != null)
+                    const SizedBox(height: 12),
                     Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: OutlinedButton(
-                        onPressed: () => _confirmResign(uid),
-                        child: Text(l10n.resignButton),
+                      padding: const EdgeInsets.all(16),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final boardSize =
+                              constraints.maxWidth.clamp(0, 400).toDouble();
+                          return GestureDetector(
+                            key: const Key('shogi_pvp_board_gesture_detector'),
+                            onTapUp: (details) {
+                              final square = _renderer.squareAt(
+                                BoardOffset(
+                                  details.localPosition.dx,
+                                  details.localPosition.dy,
+                                ),
+                                BoardSize(boardSize, boardSize),
+                                position,
+                              );
+                              if (square != null) {
+                                _onTapSquare(
+                                  square,
+                                  pvp,
+                                  position,
+                                  historyKeys,
+                                  uid,
+                                );
+                              }
+                            },
+                            child: SizedBox(
+                              width: boardSize,
+                              child: _renderer.build(
+                                position,
+                                hints: _hints,
+                                selected: _selected,
+                                showAttackMap: showAttackMap,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
-                ],
+                    if (pvp.canClaimAbandonmentForfeit(
+                      uid,
+                      policy: ShogiPvpGameService.abandonmentPolicy,
+                    ))
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Column(
+                          children: [
+                            Text(
+                              l10n.pvpOpponentInactiveMessage(
+                                ShogiPvpGameService
+                                    .abandonmentPolicy.threshold.inHours,
+                              ),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            FilledButton(
+                              key: const Key('shogi_pvp_claim_forfeit_button'),
+                              onPressed: () => _confirmClaimForfeit(uid),
+                              child: Text(l10n.pvpClaimForfeitButton),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (pvp.isActive && humanSide != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: OutlinedButton(
+                          onPressed: () => _confirmResign(uid),
+                          child: Text(l10n.resignButton),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           );

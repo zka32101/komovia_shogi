@@ -9,14 +9,21 @@ import '../src/shogi_position.dart';
 /// komovia_goの`PvpGameService`と同じ役割だが、盤面はFirestoreへ直接
 /// エンコードせず、`ShogiPvpGame.kifMoves`（KIF棋譜文字列）を都度
 /// 初期局面から打ち直して再構成する（`ShogiPvpGame`のクラスコメント
-/// 参照）。放置対局の救済（claimAbandonmentForfeit相当）や持ち時間は
-/// このPRの範囲外 — 後続PRで追加する。
+/// 参照）。放置対局の救済は[claimAbandonmentForfeit]（判定ロジックは
+/// komovia_coreの共有型`AbandonmentForfeitPolicy`）。持ち時間は未実装。
 class ShogiPvpGameService {
   ShogiPvpGameService(this._firestore, {ShogiGame? game})
       : _game = game ?? ShogiGame();
 
   final FirebaseFirestore _firestore;
   final ShogiGame _game;
+
+  /// 放置対局の不戦勝申請ポリシー。komovia_go/komovia_chessは48時間だが、
+  /// 将棋は1局が数十〜百数十手と長く、相手の応手待ちで丸2日止まると
+  /// 実質的に対局が終わってしまうため、24時間に短縮する（「1日1手は
+  /// 指せる」程度の猶予は残し、時間に追われない設計方針とも両立させる）。
+  static const AbandonmentForfeitPolicy abandonmentPolicy =
+      AbandonmentForfeitPolicy(threshold: Duration(hours: 24));
 
   CollectionReference<Map<String, dynamic>> get _games =>
       _firestore.collection('shogi_pvp_games');
@@ -158,6 +165,39 @@ class ShogiPvpGameService {
         'result': 'resignation',
         'updatedAt': FieldValue.serverTimestamp(),
       });
+    });
+  }
+
+  /// 相手が[abandonmentPolicy]の閾値以上着手していない場合に、
+  /// 手番を待っている側が不戦勝を申請する。トランザクション内で現在の
+  /// 状態に対して条件を再確認するので、相手の着手・投了と同時に呼ばれても
+  /// 結果が上書きされない。条件を満たさなければ何もせず`false`を返す。
+  Future<bool> claimAbandonmentForfeit({
+    required String gameId,
+    required String claimantUid,
+    DateTime? now,
+  }) {
+    return _firestore.runTransaction<bool>((transaction) async {
+      final docRef = _games.doc(gameId);
+      final snapshot = await transaction.get(docRef);
+      if (!snapshot.exists) return false;
+
+      final pvp = ShogiPvpGame.fromFirestore(snapshot);
+      if (!pvp.canClaimAbandonmentForfeit(
+        claimantUid,
+        policy: abandonmentPolicy,
+        now: now,
+      )) {
+        return false;
+      }
+
+      transaction.update(docRef, {
+        'status': 'finished',
+        'winnerUid': claimantUid,
+        'result': 'forfeit',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      return true;
     });
   }
 }
