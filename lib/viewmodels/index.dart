@@ -17,3 +17,4 @@ export 'tournament_provider.dart';
 export 'user_profile_provider.dart';
 export 'event_provider.dart';
 export 'skin_provider.dart';
+export 'repertoire_provider.dart';
