@@ -60,8 +60,10 @@ final aiAnalysisPlanProductProvider =
 
 /// ストア上の商品情報（現地通貨の価格表示用）。未登録・未接続ならnull。
 final subscriptionProductProvider =
-    FutureProvider.family<ProductDetails?, SubscriptionPlan>((ref, plan) {
-  return ref.watch(purchaseServiceProvider).fetchProduct(plan.productId);
+    FutureProvider.family<ProductDetails?, SubscriptionPlan>((ref, plan) async {
+  final productId = plan.productId;
+  if (productId == null) return null;
+  return ref.watch(purchaseServiceProvider).fetchProduct(productId);
 });
 
 /// purchaseStreamに届いた更新を処理する。購入/復元なら権利を付与して
@@ -89,7 +91,8 @@ Future<void> handlePurchaseUpdates({
           if (plan != null) {
             await entitlementService.grantPremium(
               uid,
-              plan.entitlementLength,
+              // productIdを持つのは月額のみ（期間あり）。
+              plan.entitlementLength!,
               skipIfAlreadyActive: true,
             );
           } else {
@@ -165,12 +168,17 @@ final purchaseSubscriptionProvider =
     if (uid == null) {
       throw PurchaseUnavailableException('購入にはサインインが必要です。');
     }
+    final productId = plan.productId;
+    final length = plan.entitlementLength;
+    if (productId == null || length == null) {
+      // 年額・買い切りは将棋道ではまだ販売していない。
+      throw PurchaseUnavailableException('このプランは現在販売していません。');
+    }
     return runPurchaseFlow(
       purchaseService: ref.read(purchaseServiceProvider),
-      productId: plan.productId,
-      grant: () => ref
-          .read(entitlementServiceProvider)
-          .grantPremium(uid, plan.entitlementLength),
+      productId: productId,
+      grant: () =>
+          ref.read(entitlementServiceProvider).grantPremium(uid, length),
     );
   };
 });
@@ -207,8 +215,7 @@ Future<void> runPurchaseFlow({
   }
   final product = await purchaseService.fetchProduct(productId);
   if (product == null) {
-    throw PurchaseUnavailableException(
-        'このプランは現在ご購入いただけません。しばらくしてから再度お試しください。');
+    throw PurchaseUnavailableException('このプランは現在ご購入いただけません。しばらくしてから再度お試しください。');
   }
 
   final completer = Completer<PurchaseDetails>();
@@ -222,7 +229,8 @@ Future<void> runPurchaseFlow({
             completer.complete(purchase);
           case PurchaseStatus.error:
             purchaseService.completePurchase(purchase);
-            completer.completeError(purchase.error ?? Exception('Purchase failed'));
+            completer
+                .completeError(purchase.error ?? Exception('Purchase failed'));
           case PurchaseStatus.canceled:
             purchaseService.completePurchase(purchase);
             completer.completeError(PurchaseCanceledException());

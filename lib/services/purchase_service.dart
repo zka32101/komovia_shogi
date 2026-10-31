@@ -1,16 +1,19 @@
 import 'package:in_app_purchase/in_app_purchase.dart';
 
-/// ペイウォールで販売するプレミアムプラン。現状は月額のみ
-/// （年額・買い切りは今後の判断事項）。
-enum SubscriptionPlan { monthly }
+import 'package:komovia_core/komovia_core.dart' show SubscriptionPlan;
 
+export 'package:komovia_core/komovia_core.dart'
+    show SubscriptionPlan, SubscriptionPlanEntitlementLength;
+
+/// ペイウォールで販売するプレミアムプランの商品ID。プラン型自体は
+/// komovia_coreの[SubscriptionPlan]（monthly/annual/lifetime）を共有し、
+/// 期間はcoreの`entitlementLength`を使う。将棋道が現状販売しているのは
+/// 月額のみで、年額・買い切りはストア商品が無いためnull（今後の判断事項）。
 extension SubscriptionPlanProductId on SubscriptionPlan {
-  String get productId => switch (this) {
+  String? get productId => switch (this) {
         SubscriptionPlan.monthly => PurchaseService.premiumMonthlyProductId,
-      };
-
-  Duration get entitlementLength => switch (this) {
-        SubscriptionPlan.monthly => const Duration(days: 30),
+        SubscriptionPlan.annual => null,
+        SubscriptionPlan.lifetime => null,
       };
 }
 
@@ -65,8 +68,8 @@ class PurchaseService {
   }
 
   /// 購入フローを開始する。結果は[purchaseStream]に非同期で届く。
-  Future<bool> buy(ProductDetails product) =>
-      _iap.buyNonConsumable(purchaseParam: PurchaseParam(productDetails: product));
+  Future<bool> buy(ProductDetails product) => _iap.buyNonConsumable(
+      purchaseParam: PurchaseParam(productDetails: product));
 
   /// 過去の購入を`restored`として[purchaseStream]へ再配信させる。
   /// App Store審査ガイドライン3.1.1により、明示的な「購入を復元」導線が必須。
@@ -74,7 +77,8 @@ class PurchaseService {
 
   /// ストアへの完了通知。これをしないと未処理扱いで返金される。
   Future<void> completePurchase(PurchaseDetails purchase) {
-    if (purchase.pendingCompletePurchase) return _iap.completePurchase(purchase);
+    if (purchase.pendingCompletePurchase)
+      return _iap.completePurchase(purchase);
     return Future.value();
   }
 }
