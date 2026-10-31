@@ -54,7 +54,7 @@ class DirectMessageService {
       'lastMessage': content,
       'lastMessageAt': now.toIso8601String(),
       'lastSenderUid': fromUid,
-      'unreadCount.$toUid': FieldValue.increment(1),
+      'unreadCount': {toUid: FieldValue.increment(1)},
     }, SetOptions(merge: true));
     await batch.commit();
   }
