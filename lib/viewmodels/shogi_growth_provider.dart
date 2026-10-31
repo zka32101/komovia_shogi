@@ -5,6 +5,7 @@ import '../utils/shogi_rating.dart';
 import 'auth_provider.dart';
 import 'leaderboard_provider.dart';
 import 'shogi_game_provider.dart';
+import 'user_profile_provider.dart';
 
 /// 対局終了時にレーティング・対局数・勝数を更新する（komovia_goの
 /// `_updateAiGameRating`に相当）。失敗はbest-effortで握りつぶす —
@@ -38,6 +39,8 @@ final updateShogiRatingAfterGameProvider =
         gamesDelta: 1,
         winsDelta: won ? 1 : 0,
       );
+      // 実績フレームの解放状態はこのエントリーから導出しているので再計算させる。
+      ref.invalidate(unlockedAvatarFrameIdsProvider(uid));
     } catch (_) {
       // best-effort: 対局自体は常に続行できる
     }

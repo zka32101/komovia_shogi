@@ -274,5 +274,27 @@
   "boardSkinSectionLabel": "盤",
   "pieceSkinSectionLabel": "駒",
   "skinSelectedLabel": "使用中",
-  "skinLockedLabel": "未所有"
+  "skinLockedLabel": "未所有",
+  "avatarFrameSectionLabel": "アバターフレーム",
+  "changeAvatarFrameButton": "フレームを変更",
+  "chooseAvatarFrameTitle": "フレームを選択（対局の実績で解放）",
+  "noAvatarFrameLabel": "フレームなし",
+  "avatarFrameRequirementGames": "AI対局を{count}局プレイ",
+  "@avatarFrameRequirementGames": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "avatarFrameRequirementWins": "AI対局で{count}勝",
+  "@avatarFrameRequirementWins": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "avatarFrameRequirementRating": "レーティング{count}以上",
+  "@avatarFrameRequirementRating": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
 }
