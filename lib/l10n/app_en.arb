@@ -1,8 +1,6 @@
 {
   "@@locale": "en",
-
   "appTitle": "将棋道",
-
   "resumeGameTile": "続きから (Resume game)",
   "playShogiTile": "将棋をプレイ (Play shogi)",
   "pvpMatchingTile": "対局相手を探す (PvP matching)",
@@ -11,26 +9,27 @@
   "messagesTile": "Messages",
   "leaderboardTile": "Leaderboard",
   "tournamentsTile": "Tournaments",
-
   "notificationsTitle": "Notifications",
   "noNotificationsMessage": "No notifications",
-
   "messagesScreenTitle": "Messages",
   "noConversationsMessage": "No conversations yet",
-
   "messageHint": "Message",
-
   "leaderboardTitle": "Leaderboard",
   "noRankedPlayersMessage": "No ranked players yet",
   "winsRecordLabel": "{wins}/{games} wins ({winRate}%)",
   "@winsRecordLabel": {
     "placeholders": {
-      "wins": { "type": "int" },
-      "games": { "type": "int" },
-      "winRate": { "type": "String" }
+      "wins": {
+        "type": "int"
+      },
+      "games": {
+        "type": "int"
+      },
+      "winRate": {
+        "type": "String"
+      }
     }
   },
-
   "friendsTitle": "Friends",
   "friendsTab": "Friends",
   "pendingTab": "Pending",
@@ -42,7 +41,6 @@
   "addFriendDialogTitle": "Add friend",
   "friendUidLabel": "Friend's uid",
   "sendButton": "Send",
-
   "tournamentsTitle": "Tournaments",
   "noTournamentsMessage": "No tournaments yet",
   "joinButton": "Join",
@@ -50,25 +48,35 @@
   "nameLabel": "Name",
   "tournamentCancelButton": "Cancel",
   "createButton": "Create",
-
   "tournamentDefaultTitle": "Tournament",
   "startButton": "Start",
   "bracketNotGeneratedMessage": "Bracket not generated yet",
   "roundLabel": "Round {round}",
   "@roundLabel": {
-    "placeholders": { "round": { "type": "int" } }
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
   },
   "byeLabel": "Bye",
   "winnerLabel": "Winner: {name}",
   "@winnerLabel": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "reportWinButton": "Report win",
-
   "growthTitle": "成長の記録",
   "loadFailedMessage": "読み込みに失敗しました: {error}",
   "@loadFailedMessage": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "noGameRecordsMessage": "まだ対局記録がありません。\nAIと対局すると、ここに成長の記録が表示されます。",
   "currentRatingLabel": "現在のレーティング",
@@ -78,43 +86,69 @@
   "encouragementGoodWinRate": "素晴らしい勝率です！この調子で指し続けましょう。",
   "encouragementContinuing": "{gamesPlayed}局、よく指し続けています。一局ごとの経験が、確かな力になっています。",
   "@encouragementContinuing": {
-    "placeholders": { "gamesPlayed": { "type": "int" } }
+    "placeholders": {
+      "gamesPlayed": {
+        "type": "int"
+      }
+    }
   },
-
   "findOpponentTitle": "対局相手を探す",
   "matchingDescription": "レートの近い相手とマッチングします。",
   "findOpponentButton": "対局相手を探す",
   "matchHistoryLabel": "対局履歴",
   "yourRatingLabel": "あなたのレート: {rating}",
   "@yourRatingLabel": {
-    "placeholders": { "rating": { "type": "int" } }
+    "placeholders": {
+      "rating": {
+        "type": "int"
+      }
+    }
   },
   "opponentFoundLabel": "対局相手が見つかりました",
   "ratingDiffLabel": "レート差: {diff}",
   "@ratingDiffLabel": {
-    "placeholders": { "diff": { "type": "int" } }
+    "placeholders": {
+      "diff": {
+        "type": "int"
+      }
+    }
   },
   "startGameButton": "対局を開始する",
   "noMatchHistoryMessage": "対局履歴はまだありません",
   "opponentRatingLabel": "レート: {rating}",
   "@opponentRatingLabel": {
-    "placeholders": { "rating": { "type": "int" } }
+    "placeholders": {
+      "rating": {
+        "type": "int"
+      }
+    }
   },
   "errorLabel": "エラー: {error}",
   "@errorLabel": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "noOpponentFoundMessage": "相手が見つかりませんでした。しばらくしてからもう一度お試しください",
   "gameStartedNotificationTitle": "{displayName}さんと対局が始まりました",
   "@gameStartedNotificationTitle": {
-    "placeholders": { "displayName": { "type": "String" } }
+    "placeholders": {
+      "displayName": {
+        "type": "String"
+      }
+    }
   },
   "gameStartedNotificationBody": "タップして対局を開く",
   "gameStartFailedMessage": "対局の開始に失敗しました: {error}",
   "@gameStartFailedMessage": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
-
   "illegalMoveMessage": "その手は指せません",
   "pvpResignConfirmTitle": "投了しますか？",
   "pvpResignConfirmContent": "投了すると対局が終了します。",
@@ -128,7 +162,6 @@
   "opponentTurnLabel": "相手の番です",
   "pvpGameTitle": "対局",
   "loginRequiredMessage": "ログインが必要です",
-
   "onboardingStep1Title": "駒の動かし方",
   "onboardingStep1Body": "駒をタップすると、動かせるマスがハイライトされます。ハイライトされたマスをタップすれば、そこへ指せます。",
   "onboardingStep2Title": "勝敗",
@@ -139,20 +172,27 @@
   "capturedMessage": "やった、1枚取れました！",
   "capturedExplanationMessage": "取った駒は自分の「持ち駒」になります。後で盤の空いているマスに打てます。",
   "beginButton": "はじめる",
-
   "reviewTitle": "感想戦",
   "startReviewButton": "検討する",
   "reviewingMessage": "検討中…",
   "reviewingProgressMessage": "検討中… ({done} / {total})",
   "@reviewingProgressMessage": {
     "placeholders": {
-      "done": { "type": "int" },
-      "total": { "type": "int" }
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "reviewFailedMessage": "検討に失敗しました: {error}",
   "@reviewFailedMessage": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "senteLabel": "先手",
   "goteLabel": "後手",
@@ -163,7 +203,6 @@
   "moveQualityInaccuracy": "不正確",
   "moveQualityMistake": "悪手",
   "moveQualityBlunder": "大悪手",
-
   "chooseAiStrengthTitle": "AIの強さを選んでください",
   "quickGameLabel": "クイック対局",
   "quickGameDescription": "AIの考慮時間を短くし、短時間で一局を終えられるようにします。",
@@ -171,8 +210,12 @@
   "winResultMessage": "{winner}勝ち{suffix}",
   "@winResultMessage": {
     "placeholders": {
-      "winner": { "type": "String" },
-      "suffix": { "type": "String" }
+      "winner": {
+        "type": "String"
+      },
+      "suffix": {
+        "type": "String"
+      }
     }
   },
   "resignationSuffix": "（投了）",
@@ -183,8 +226,12 @@
   "aiStrengthTooltip": "AIの強さ（現在: {difficulty}{quickSuffix}）",
   "@aiStrengthTooltip": {
     "placeholders": {
-      "difficulty": { "type": "String" },
-      "quickSuffix": { "type": "String" }
+      "difficulty": {
+        "type": "String"
+      },
+      "quickSuffix": {
+        "type": "String"
+      }
     }
   },
   "quickGameSuffixLabel": "・クイック対局",
@@ -198,16 +245,23 @@
   "shareHashtag": "#Komovia将棋",
   "shareMoveCountLine": "手数: {moveCount}手",
   "@shareMoveCountLine": {
-    "placeholders": { "moveCount": { "type": "int" } }
+    "placeholders": {
+      "moveCount": {
+        "type": "int"
+      }
+    }
   },
   "yourTurnStatusMessage": "先手（あなた）の番です",
   "shareButtonLabel": "SNSでシェア",
   "accuracyCalculatingMessage": "正確度を計算中…",
   "yourAccuracyLabel": "あなたの正確度: {accuracy}%",
   "@yourAccuracyLabel": {
-    "placeholders": { "accuracy": { "type": "String" } }
+    "placeholders": {
+      "accuracy": {
+        "type": "String"
+      }
+    }
   },
-
   "difficultyBeginnerName": "初心者向け",
   "difficultyEasyName": "やさしい",
   "difficultyMediumName": "ふつう",
@@ -216,10 +270,8 @@
   "difficultyEasyDescription": "簡単な読みのみ。油断すると負けることもあります。",
   "difficultyMediumDescription": "基本的な戦術を踏まえて指します。",
   "difficultyHardDescription": "しっかり読んで指します。手応えのある相手です。",
-
   "showAttackMapTooltip": "Show attack map",
   "hideAttackMapTooltip": "Hide attack map",
-
   "noveltyChessTile": "Bonus mode: Play chess",
   "noveltyChessTileSubtitle": "A fun side mode with different rules from shogi (pass the device to play 2-player)",
   "noveltyChessTitle": "Bonus mode: Chess",
@@ -230,24 +282,30 @@
   "chessTurnMessage": "{side} to move{checkSuffix}",
   "@chessTurnMessage": {
     "placeholders": {
-      "side": { "type": "String" },
-      "checkSuffix": { "type": "String" }
+      "side": {
+        "type": "String"
+      },
+      "checkSuffix": {
+        "type": "String"
+      }
     }
   },
   "chessCheckmateMessage": "Checkmate! {winner} wins",
   "@chessCheckmateMessage": {
-    "placeholders": { "winner": { "type": "String" } }
+    "placeholders": {
+      "winner": {
+        "type": "String"
+      }
+    }
   },
   "chessStalemateMessage": "Stalemate - it's a draw",
   "chessDrawMessage": "It's a draw",
   "chessNewGameButton": "New game",
-
   "settingsTile": "Settings",
   "settingsTitle": "Settings",
   "avatarSectionLabel": "Avatar",
   "changeAvatarButton": "Change avatar",
   "chooseAvatarTitle": "Choose an avatar",
-
   "eventLimitedBadge": "Limited time",
   "eventRemainingDays": "{days} days left",
   "eventRemainingHours": "{hours} hours left",
@@ -278,22 +336,27 @@
   "avatarFrameRequirementGames": "Play {count} AI games",
   "@avatarFrameRequirementGames": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "avatarFrameRequirementWins": "Win {count} AI games",
   "@avatarFrameRequirementWins": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "avatarFrameRequirementRating": "Reach a rating of {count}",
   "@avatarFrameRequirementRating": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
-
   "repertoireTile": "定跡訓練 (Repertoire)",
   "repertoireListTitle": "Opening repertoire",
   "repertoireEmpty": "No repertoires yet. Create one with the + button.",
@@ -329,7 +392,6 @@
   "repertoirePromote": "Promote",
   "repertoireNoPromote": "Don't promote",
   "repertoireNoDueLines": "No lines are due for review",
-
   "tsumeTile": "Tsume / Tsume Rush",
   "tsumeMenuTitle": "Tsume shogi",
   "tsumePracticeTitle": "Tsume (practice)",
@@ -365,7 +427,13 @@
   "pvpClaimForfeitConfirmTitle": "不戦勝を申請しますか？",
   "pvpClaimForfeitConfirmContent": "相手が長時間指していないため、この対局をあなたの勝ちとして終了します。",
   "pvpForfeitResultMessage": "相手の放置により不戦勝となりました",
-  "@pvpOpponentInactiveMessage": {"placeholders": {"hours": {"type": "int"}}},
+  "@pvpOpponentInactiveMessage": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
   "accountLinkSectionLabel": "機種変更に備えてアカウントを連携",
   "accountLinkDescription": "メールアドレスを連携すると、機種変更や再インストール後も同じレーティング・棋譜・フレンドを引き継げます。",
   "accountLinkedLabel": "連携済み: {email}",
@@ -382,9 +450,72 @@
   "deleteAccountConfirmWord": "削除",
   "deleteAccountFailedMessage": "削除に失敗しました: {error}",
   "cancelButton": "キャンセル",
-  "@accountLinkedLabel": {"placeholders": {"email": {"type": "String"}}},
-  "@accountLinkFailedMessage": {"placeholders": {"error": {"type": "String"}}},
-  "@deleteAccountFailedMessage": {"placeholders": {"error": {"type": "String"}}},
+  "@accountLinkedLabel": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "@accountLinkFailedMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "@deleteAccountFailedMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "aiReviewDailyLimitMessage": "You've reached today's AI analysis limit ({limit}). Please try again tomorrow.",
-  "@aiReviewDailyLimitMessage": {"placeholders": {"limit": {"type": "int"}}}
+  "@aiReviewDailyLimitMessage": {
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "premiumSettingsLabel": "Premium",
+  "premiumActiveLabel": "Premium member (until {date})",
+  "@premiumActiveLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "premiumInactiveLabel": "Not subscribed",
+  "paywallTitle": "Shogido Premium",
+  "paywallHeadline": "Get more out of Shogido",
+  "paywallBenefitSupport": "Support continued development",
+  "paywallBenefitFuture": "Access premium-only features as they are added",
+  "premiumMonthlyLabel": "Monthly plan",
+  "premiumMonthlyFallbackPrice": "¥300 / month",
+  "subscribeButton": "Subscribe",
+  "restorePurchasesButton": "Restore purchases",
+  "purchaseSuccessMessage": "Thank you for your purchase!",
+  "purchaseCanceledMessage": "Purchase canceled",
+  "purchaseFailedMessage": "Purchase failed: {error}",
+  "@purchaseFailedMessage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreSuccessMessage": "Purchases restored",
+  "restoreNothingMessage": "No purchases to restore were found",
+  "paywallActiveMessage": "You're a premium member (until {date})",
+  "@paywallActiveMessage": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallLegalNote": "Payment is charged to your store account. You can cancel the subscription anytime in your store settings."
 }
