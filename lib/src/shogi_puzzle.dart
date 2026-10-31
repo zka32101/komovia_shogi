@@ -115,20 +115,40 @@ class ShogiPuzzle {
     int? rating,
     List<String>? themes,
   }) {
-    final game = ShogiGame();
-    final position = game.decode(sfen);
-    final solution = solutionUsi.map(_parseUsiMove).toList();
-
-    return Puzzle(
+    return fromSfen(
       id: id,
       gameId: gameId,
-      position: position,
-      solution: solution,
+      sfen: sfen,
+      solutionUsi: solutionUsi,
       title: rating != null ? 'lishogi #$id ($rating)' : 'lishogi #$id',
       metadata: {
         if (rating != null) 'rating': rating,
         if (themes != null) 'themes': themes,
       },
+    );
+  }
+
+  /// Generic SFEN + USI-solution puzzle (the shared core of [fromLishogi]),
+  /// used by the app's own hand-authored 詰将棋 set
+  /// (`lib/src/tsume/tsume_problems.dart`), which is most compactly and
+  /// verifiably written as SFEN rather than [fromTsumeJson]'s flat
+  /// 81-cell board.
+  static Puzzle<ShogiPosition> fromSfen({
+    required String id,
+    required String gameId,
+    required String sfen,
+    required List<String> solutionUsi,
+    String? title,
+    Map<String, Object?> metadata = const {},
+  }) {
+    final position = ShogiGame().decode(sfen);
+    return Puzzle(
+      id: id,
+      gameId: gameId,
+      position: position,
+      solution: solutionUsi.map(_parseUsiMove).toList(),
+      title: title,
+      metadata: metadata,
     );
   }
 

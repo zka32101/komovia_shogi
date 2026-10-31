@@ -11,6 +11,7 @@ import 'leaderboard_screen.dart';
 import 'message_threads_screen.dart';
 import 'notification_screen.dart';
 import 'repertoire_list_screen.dart';
+import 'tsume_menu_screen.dart';
 import 'novelty_chess_screen.dart';
 import 'settings_screen.dart';
 import 'shogi_matching_screen.dart';
@@ -195,6 +196,17 @@ class HomeScreen extends ConsumerWidget {
                     context,
                     MaterialPageRoute(
                       builder: (_) => RepertoireListScreen(uid: uid),
+                    ),
+                  ),
+                ),
+                _HomeTile(
+                  key: const Key('tsume_tile'),
+                  icon: Icons.extension_outlined,
+                  title: l10n.tsumeTile,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TsumeMenuScreen(uid: uid),
                     ),
                   ),
                 ),
