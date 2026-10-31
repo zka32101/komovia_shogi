@@ -40,6 +40,15 @@ final resignShogiPvpGameProvider =
   };
 });
 
+/// 放置による不戦勝を申請する。条件を満たさなければfalse。
+final claimShogiPvpAbandonmentProvider =
+    Provider<Future<bool> Function(String gameId, String uid)>((ref) {
+  final service = ref.watch(shogiPvpGameServiceProvider);
+  return (gameId, uid) {
+    return service.claimAbandonmentForfeit(gameId: gameId, claimantUid: uid);
+  };
+});
+
 /// 新しいPvP対局を作成する。
 final createShogiPvpGameProvider = Provider<
     Future<ShogiPvpGame> Function({

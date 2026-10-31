@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:komovia_core/komovia_core.dart';
 
 /// 2人のプレイヤー間の対局（マッチング成立後の実対局）のスナップショット。
 ///
@@ -23,7 +24,7 @@ class ShogiPvpGame {
   final int movesCount;
   final String status; // 'active', 'finished'
   final String? winnerUid;
-  final String? result; // 'resignation', 'checkmate', null(進行中)
+  final String? result; // 'resignation', 'checkmate', 'draw', 'forfeit'(放置による不戦勝), null(進行中)
   final String? matchId; // ShogiMatchResult.idとの紐付け（あれば）
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -59,6 +60,25 @@ class ShogiPvpGame {
     final color = playerColorOf(uid);
     if (color == 0) return false;
     return (color == 1) == isSenteTurn;
+  }
+
+  /// 最後に盤面が動いた時刻（未着手なら作成時刻）。
+  DateTime get lastActivityAt => updatedAt ?? createdAt;
+
+  /// [uid]が放置による不戦勝を申請できるか。対局中・対局者・相手の手番
+  /// （＝[uid]は待っている側）であることを確認したうえで、時間判定は
+  /// komovia_coreの[AbandonmentForfeitPolicy]に委ねる。
+  bool canClaimAbandonmentForfeit(
+    String uid, {
+    required AbandonmentForfeitPolicy policy,
+    DateTime? now,
+  }) {
+    if (!isActive || playerColorOf(uid) == 0) return false;
+    return policy.canClaim(
+      isClaimantsTurn: isTurnOf(uid),
+      lastActivityAt: lastActivityAt,
+      now: now,
+    );
   }
 
   factory ShogiPvpGame.fromFirestore(
