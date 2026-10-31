@@ -16,3 +16,4 @@ export 'shogi_review_provider.dart';
 export 'tournament_provider.dart';
 export 'user_profile_provider.dart';
 export 'event_provider.dart';
+export 'skin_provider.dart';

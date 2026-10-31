@@ -4,6 +4,7 @@ import 'piece.dart';
 import 'theme/app_theme.dart';
 import 'widgets/board_background_painter.dart';
 import 'widgets/koma_painter.dart';
+import 'cosmetics/shogi_skins.dart';
 
 class MiniBoardWidget extends StatelessWidget {
   final List<List<Piece?>> board;
@@ -46,8 +47,6 @@ class MiniBoardWidget extends StatelessWidget {
   });
 
   // Colors matching game_screen.dart standard theme
-  static const _cellColor = Color(0xFFDEB887);
-  static const _cellBorder = Color(0xFF7A4E2B);
 
   // Colors matching game_screen.dart's PieceTheme.textured
   static const _texturedBorder = Color(0xFF8D6E63);
@@ -56,6 +55,10 @@ class MiniBoardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scope = ShogiSkinScope.maybeOf(context);
+    final boardSkin = scope?.board ?? boardSkinStyleById(null);
+    final pieceSkin = scope?.piece ?? pieceSkinStyleById(null);
+    final cellColor = boardSkin.cellColor;
     return LayoutBuilder(builder: (context, constraints) {
       final totalSize = size ?? constraints.maxWidth;
       final labelSize = showLabels ? totalSize * 0.05 : 0.0;
@@ -77,7 +80,7 @@ class MiniBoardWidget extends StatelessWidget {
                 final isHintFr = hintFrom == (r, c);
                 final isHintTo = hintTo == (r, c);
 
-                Color bg = _cellColor;
+                Color bg = cellColor;
                 // 効き（利き）可視化: 先手=青、後手=赤、両方=紫
                 if (p1AttackMap != null && p2AttackMap != null) {
                   final p1V = p1AttackMap![r][c];
@@ -99,8 +102,8 @@ class MiniBoardWidget extends StatelessWidget {
                     bg = Color.lerp(bg, Colors.red.shade200, 0.12)!;
                   }
                 }
-                if (isLastFr) bg = Color.lerp(_cellColor, Colors.amber.shade200, 0.35)!;
-                if (isLastTo) bg = Color.lerp(_cellColor, Colors.amber.shade300, 0.55)!;
+                if (isLastFr) bg = Color.lerp(cellColor, Colors.amber.shade200, 0.35)!;
+                if (isLastTo) bg = Color.lerp(cellColor, Colors.amber.shade300, 0.55)!;
                 if (isHintFr) bg = AppTheme.accent;
                 if (isHintTo) bg = AppTheme.accent;
                 if (isHL) bg = Colors.lightBlue.shade100;
@@ -109,7 +112,7 @@ class MiniBoardWidget extends StatelessWidget {
                 // so the wood-grain background painted behind the grid
                 // shows through; a highlighted cell keeps its tint, just
                 // blended at lower opacity over that background.
-                final isDefaultBg = bg == _cellColor;
+                final isDefaultBg = bg == cellColor;
                 final cellBg = textured
                     ? (isDefaultBg
                         ? Colors.transparent
@@ -126,7 +129,7 @@ class MiniBoardWidget extends StatelessWidget {
                         : isHintTo
                         ? Border.all(color: AppTheme.accent, width: 1.5)
                         : Border.all(
-                            color: textured ? _texturedBorder : _cellBorder,
+                            color: textured ? _texturedBorder : boardSkin.cellBorder,
                             width: 0.6,
                           ),
                   ),
@@ -140,8 +143,8 @@ class MiniBoardWidget extends StatelessWidget {
                           child: CustomPaint(
                             painter: KomaPainter(
                               pointsUp: boardFlipped ? !piece.isPlayer1 : piece.isPlayer1,
-                              fill: const Color(0xFFF4DDA6),
-                              border: const Color(0xFFC49A4E),
+                              fill: pieceSkin.fill,
+                              border: pieceSkin.border,
                             ),
                             child: Center(
                               child: RotatedBox(
@@ -151,6 +154,7 @@ class MiniBoardWidget extends StatelessWidget {
                                   style: komaLabelStyle(
                                     isPromoted: piece.isPromoted,
                                     fontSize: cellSize * 0.5,
+                                    color: pieceSkin.labelColor,
                                   ),
                                 ),
                               ),
@@ -182,10 +186,10 @@ class MiniBoardWidget extends StatelessWidget {
         clipBehavior: Clip.hardEdge,
         decoration: BoxDecoration(
           border: Border.all(
-            color: textured ? _texturedBorder : const Color(0xFF4A2E0A),
+            color: textured ? _texturedBorder : boardSkin.outerBorder,
             width: 2,
           ),
-          color: textured ? null : _cellColor,
+          color: textured ? null : cellColor,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withAlpha(80),
@@ -235,7 +239,7 @@ class MiniBoardWidget extends StatelessWidget {
         return Container(
           width: boardSize,
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-          color: const Color(0xFFC8A46A),
+          color: boardSkin.handBarColor,
           child: Row(
             children: [
               Text('$label持駒: ',
