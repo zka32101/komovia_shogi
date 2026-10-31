@@ -44,6 +44,30 @@ void main() {
     expect(unread['a'], 1);
   });
 
+  test('participantUids stays sorted regardless of who messages first, '
+      'matching the rules\' immutable-array check', () async {
+    await service.sendMessage(
+      fromUid: 'b',
+      fromDisplayName: 'B',
+      toUid: 'a',
+      toDisplayName: 'A',
+      content: 'b started it',
+    );
+    final afterFirst = (await threadData())['participantUids'] as List;
+
+    await service.sendMessage(
+      fromUid: 'a',
+      fromDisplayName: 'A',
+      toUid: 'b',
+      toDisplayName: 'B',
+      content: 'a replies',
+    );
+    final afterReply = (await threadData())['participantUids'] as List;
+
+    expect(afterFirst, ['a', 'b']);
+    expect(afterReply, afterFirst);
+  });
+
   test('markThreadRead resets only the reader\'s count', () async {
     await service.sendMessage(
       fromUid: 'a',

@@ -49,7 +49,7 @@ class DirectMessageService {
     batch.set(msgDoc, message.toJson());
     batch.set(_threadDoc(threadId), {
       'id': threadId,
-      'participantUids': [fromUid, toUid],
+      'participantUids': [fromUid, toUid]..sort(),
       'participantNames': {fromUid: fromDisplayName, toUid: toDisplayName},
       'lastMessage': content,
       'lastMessageAt': now.toIso8601String(),
