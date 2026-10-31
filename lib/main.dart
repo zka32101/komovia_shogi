@@ -12,6 +12,7 @@ import 'firebase_options.dart';
 import 'l10n/app_localizations.dart';
 import 'services/event_config_service.dart';
 import 'viewmodels/index.dart';
+import 'src/cosmetics/shogi_skins.dart';
 import 'views/screens/home_screen.dart';
 import 'views/screens/onboarding_screen.dart';
 import 'views/screens/shogi_review_screen.dart';
@@ -42,18 +43,34 @@ void main() async {
   ));
 }
 
-class KomoviaShogiApp extends StatelessWidget {
+class KomoviaShogiApp extends ConsumerStatefulWidget {
   const KomoviaShogiApp({super.key});
 
   @override
+  ConsumerState<KomoviaShogiApp> createState() => _KomoviaShogiAppState();
+}
+
+class _KomoviaShogiAppState extends ConsumerState<KomoviaShogiApp> {
+  @override
+  void initState() {
+    super.initState();
+    ref.read(loadSkinPreferenceProvider)();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    // 選択中の盤・駒スキンをアプリ内の全ての盤面に反映する。
+    return ShogiSkinScope(
+      board: boardSkinStyleById(ref.watch(selectedBoardSkinIdProvider)),
+      piece: pieceSkinStyleById(ref.watch(selectedPieceSkinIdProvider)),
+      child: MaterialApp(
       title: 'Komovia Shogi',
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       theme:
           ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown)),
       home: const _RootScreen(),
+      ),
     );
   }
 }

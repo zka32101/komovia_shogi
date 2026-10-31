@@ -7,11 +7,12 @@ import 'package:flutter/material.dart';
 TextStyle komaLabelStyle({
   required bool isPromoted,
   required double fontSize,
+  Color color = const Color(0xFF2C1A0A),
 }) {
   return TextStyle(
     fontSize: fontSize,
     fontWeight: FontWeight.w900,
-    color: isPromoted ? const Color(0xFFB3261E) : const Color(0xFF2C1A0A),
+    color: isPromoted ? const Color(0xFFB3261E) : color,
     height: 1.0,
     shadows: [
       Shadow(

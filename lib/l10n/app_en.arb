@@ -264,5 +264,11 @@
   "hybridPromoteQuestion": "Promote?",
   "hybridPromoteYes": "Promote",
   "hybridPromoteNo": "Don't promote",
-  "hybridChessPromotionTitle": "Choose a promotion piece"
+  "hybridChessPromotionTitle": "Choose a promotion piece",
+  "cosmeticShopTitle": "Board & Piece Skins",
+  "cosmeticShopSettingsLabel": "Board & piece skins",
+  "boardSkinSectionLabel": "Board",
+  "pieceSkinSectionLabel": "Pieces",
+  "skinSelectedLabel": "In use",
+  "skinLockedLabel": "Locked"
 }

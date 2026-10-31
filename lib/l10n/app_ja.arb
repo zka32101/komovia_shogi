@@ -268,5 +268,11 @@
   "hybridPromoteQuestion": "成りますか？",
   "hybridPromoteYes": "成る",
   "hybridPromoteNo": "成らない",
-  "hybridChessPromotionTitle": "プロモーションする駒を選んでください"
+  "hybridChessPromotionTitle": "プロモーションする駒を選んでください",
+  "cosmeticShopTitle": "盤・駒のきせかえ",
+  "cosmeticShopSettingsLabel": "盤・駒のきせかえ",
+  "boardSkinSectionLabel": "盤",
+  "pieceSkinSectionLabel": "駒",
+  "skinSelectedLabel": "使用中",
+  "skinLockedLabel": "未所有"
 }

@@ -5,6 +5,7 @@ import 'package:komovia_core/komovia_core.dart';
 import '../../l10n/app_localizations.dart';
 import '../../viewmodels/index.dart';
 import '../widgets/avatar_picker.dart';
+import 'cosmetic_shop_screen.dart';
 
 /// Profile/preferences screen. Currently just the avatar picker — the one
 /// user-editable profile field this app has today.
@@ -32,6 +33,18 @@ class SettingsScreen extends ConsumerWidget {
                 child: Text(l10n.changeAvatarButton),
               ),
               onTap: () => _changeAvatar(context, ref, icon),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              key: const ValueKey('cosmetic-shop-entry'),
+              leading: const Icon(Icons.palette_outlined),
+              title: Text(l10n.cosmeticShopSettingsLabel),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CosmeticShopScreen()),
+              ),
             ),
           ),
         ],
