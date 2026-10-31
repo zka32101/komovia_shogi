@@ -59,6 +59,8 @@ class _KomoviaShogiAppState extends ConsumerState<KomoviaShogiApp> {
 
   @override
   Widget build(BuildContext context) {
+    // 未完了の購入（再配信・復元）を起動中ずっと権利へ反映する。
+    ref.watch(purchaseRecoveryProvider);
     // 選択中の盤・駒スキンをアプリ内の全ての盤面に反映する。
     return ShogiSkinScope(
       board: boardSkinStyleById(ref.watch(selectedBoardSkinIdProvider)),

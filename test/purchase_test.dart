@@ -1,0 +1,207 @@
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:komovia_shogi/l10n/app_localizations.dart';
+import 'package:komovia_shogi/models/user_entitlements.dart';
+import 'package:komovia_shogi/services/entitlement_service.dart';
+import 'package:komovia_shogi/services/purchase_service.dart';
+import 'package:komovia_shogi/viewmodels/auth_provider.dart';
+import 'package:komovia_shogi/viewmodels/purchase_provider.dart';
+import 'package:komovia_shogi/views/screens/paywall_screen.dart';
+
+import 'support/fake_purchase_service.dart';
+
+const _premium = PurchaseService.premiumMonthlyProductId;
+
+void main() {
+  late FakeFirebaseFirestore db;
+  late DateTime now;
+  late EntitlementService entitlements;
+
+  setUp(() {
+    db = FakeFirebaseFirestore();
+    now = DateTime(2026, 10, 31, 12);
+    entitlements = EntitlementService(firestore: db, clock: () => now);
+  });
+
+  group('UserEntitlements', () {
+    test('active only before the end date', () {
+      final e = UserEntitlements(premiumEndDate: DateTime(2026, 11, 1));
+      expect(e.isPremiumActive(DateTime(2026, 10, 31)), isTrue);
+      expect(e.isPremiumActive(DateTime(2026, 11, 2)), isFalse);
+      expect(UserEntitlements.none.isPremiumActive(now), isFalse);
+      expect(e.toEntitlement(DateTime(2026, 10, 31)).isActive, isTrue);
+    });
+
+    test('round-trips through json', () {
+      final e = UserEntitlements(
+          premiumStartDate: DateTime(2026, 10, 1),
+          premiumEndDate: DateTime(2026, 10, 31));
+      final r = UserEntitlements.fromJson(e.toJson());
+      expect(r.premiumStartDate, e.premiumStartDate);
+      expect(r.premiumEndDate, e.premiumEndDate);
+    });
+  });
+
+  group('EntitlementService', () {
+    test('grantPremium sets a 30-day window in the owner-only doc', () async {
+      await entitlements.grantPremium('u1', const Duration(days: 30));
+      final e = await entitlements.get('u1');
+      expect(e.premiumEndDate, now.add(const Duration(days: 30)));
+      final doc = await db.doc('users/u1/entitlements/current').get();
+      expect(doc.exists, isTrue);
+      expect((await db.doc('users/u1').get()).exists, isFalse);
+    });
+
+    test('skipIfAlreadyActive does not extend an active entitlement', () async {
+      await entitlements.grantPremium('u1', const Duration(days: 30));
+      now = now.add(const Duration(days: 10));
+      final granted = await entitlements.grantPremium(
+          'u1', const Duration(days: 30),
+          skipIfAlreadyActive: true);
+      expect(granted, isFalse);
+      expect((await entitlements.get('u1')).premiumEndDate,
+          DateTime(2026, 11, 30, 12));
+    });
+
+    test('skipIfAlreadyActive still grants after expiry', () async {
+      await entitlements.grantPremium('u1', const Duration(days: 30));
+      now = now.add(const Duration(days: 40));
+      expect(
+          await entitlements.grantPremium('u1', const Duration(days: 30),
+              skipIfAlreadyActive: true),
+          isTrue);
+    });
+  });
+
+  group('handlePurchaseUpdates', () {
+    test('grants and completes a purchased/restored premium', () async {
+      final fake = FakePurchaseService();
+      await handlePurchaseUpdates(
+        purchases: [purchase(_premium, PurchaseStatus.restored)],
+        purchaseService: fake,
+        entitlementService: entitlements,
+        uid: 'u1',
+      );
+      expect((await entitlements.get('u1')).isPremiumActive(now), isTrue);
+      expect(fake.completed, [_premium]);
+    });
+
+    test('completes errors/cancels without granting', () async {
+      final fake = FakePurchaseService();
+      await handlePurchaseUpdates(
+        purchases: [
+          purchase(_premium, PurchaseStatus.error),
+          purchase(_premium, PurchaseStatus.canceled),
+        ],
+        purchaseService: fake,
+        entitlementService: entitlements,
+        uid: 'u1',
+      );
+      expect((await entitlements.get('u1')).isPremiumActive(now), isFalse);
+      expect(fake.completed, hasLength(2));
+    });
+
+    test('leaves a purchase unacknowledged when there is no uid', () async {
+      final fake = FakePurchaseService();
+      await handlePurchaseUpdates(
+        purchases: [purchase(_premium, PurchaseStatus.purchased)],
+        purchaseService: fake,
+        entitlementService: entitlements,
+        uid: null,
+      );
+      expect(fake.completed, isEmpty);
+    });
+  });
+
+  group('runPurchaseFlow', () {
+    test('grants then completes on success', () async {
+      final fake = FakePurchaseService(
+        onBuy: (s, p) => s.emit([purchase(p.id, PurchaseStatus.purchased)]),
+      );
+      var granted = false;
+      await runPurchaseFlow(
+          purchaseService: fake,
+          productId: _premium,
+          grant: () async => granted = true);
+      expect(granted, isTrue);
+      expect(fake.completed, [_premium]);
+    });
+
+    test('throws PurchaseUnavailableException for an unknown product', () {
+      final fake = FakePurchaseService(knownProducts: {});
+      expect(
+          runPurchaseFlow(
+              purchaseService: fake, productId: _premium, grant: () async {}),
+          throwsA(isA<PurchaseUnavailableException>()));
+    });
+
+    test('throws PurchaseCanceledException when the user cancels', () async {
+      final fake = FakePurchaseService(
+        onBuy: (s, p) => s.emit([purchase(p.id, PurchaseStatus.canceled)]),
+      );
+      await expectLater(
+          runPurchaseFlow(
+              purchaseService: fake, productId: _premium, grant: () async {}),
+          throwsA(isA<PurchaseCanceledException>()));
+    });
+  });
+
+  group('PaywallScreen', () {
+    Widget app(FakePurchaseService fake) => ProviderScope(
+          overrides: [
+            currentUidProvider.overrideWithValue('u1'),
+            purchaseServiceProvider.overrideWithValue(fake),
+            entitlementServiceProvider.overrideWithValue(EntitlementService(
+                firestore: db, clock: DateTime.now)),
+            restoreSettleDelayProvider.overrideWithValue(Duration.zero),
+          ],
+          child: const MaterialApp(
+            locale: Locale('ja'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: PaywallScreen(),
+          ),
+        );
+
+    testWidgets('always shows a restore-purchases button', (tester) async {
+      await tester.pumpWidget(app(FakePurchaseService()));
+      await tester.pumpAndSettle();
+      expect(find.text('購入を復元'), findsOneWidget);
+      expect(find.byKey(const ValueKey('subscribe-button')), findsOneWidget);
+    });
+
+    testWidgets('restore with nothing to restore says so', (tester) async {
+      final fake = FakePurchaseService();
+      await tester.pumpWidget(app(fake));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('購入を復元'));
+      await tester.pumpAndSettle();
+      expect(fake.restoreCalls, 1);
+      expect(find.text('復元できる購入が見つかりませんでした'), findsOneWidget);
+    });
+
+    testWidgets('subscribing grants premium and shows the active state',
+        (tester) async {
+      final fake = FakePurchaseService(
+        onBuy: (s, p) => s.emit([purchase(p.id, PurchaseStatus.purchased)]),
+      );
+      await tester.pumpWidget(app(fake));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('subscribe-button')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('premium-active')), findsOneWidget);
+    });
+
+    testWidgets('shows an honest message when the product is not configured',
+        (tester) async {
+      await tester.pumpWidget(app(FakePurchaseService(knownProducts: {})));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('subscribe-button')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('現在ご購入いただけません'), findsOneWidget);
+    });
+  });
+}

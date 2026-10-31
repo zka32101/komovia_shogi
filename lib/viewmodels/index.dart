@@ -19,3 +19,4 @@ export 'event_provider.dart';
 export 'skin_provider.dart';
 export 'repertoire_provider.dart';
 export 'tsume_rush_provider.dart';
+export 'purchase_provider.dart';

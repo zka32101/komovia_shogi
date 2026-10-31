@@ -17,7 +17,12 @@ class AccountDataDeletionService {
   final FirebaseFirestore _db;
 
   /// `users/{uid}`配下のサブコレクション。
-  static const userSubcollections = ['friends', 'repertoires', 'tsume_rush'];
+  static const userSubcollections = [
+    'friends',
+    'repertoires',
+    'tsume_rush',
+    'entitlements',
+  ];
 
   /// `notifications/{uid}`配下のサブコレクション。
   static const notificationSubcollections = [

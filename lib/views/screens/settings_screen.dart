@@ -8,6 +8,7 @@ import '../widgets/avatar_frame_picker.dart';
 import '../widgets/avatar_picker.dart';
 import '../widgets/framed_avatar.dart';
 import 'cosmetic_shop_screen.dart';
+import 'paywall_screen.dart';
 
 /// Profile/preferences screen: avatar, frame, cosmetics, account linking
 /// (機種変更対策) and account deletion.
@@ -22,6 +23,10 @@ class SettingsScreen extends ConsumerWidget {
     final icon = ref.watch(userAvatarIconProvider(uid));
     final frame = ref.watch(userAvatarFrameProvider(uid));
     final linkedEmail = ref.watch(linkedEmailProvider);
+    final entitlements = ref.watch(userEntitlementsProvider).value;
+    final premiumEnd = (entitlements?.isPremiumActive(DateTime.now()) ?? false)
+        ? entitlements!.premiumEndDate
+        : null;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
@@ -65,6 +70,22 @@ class SettingsScreen extends ConsumerWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const CosmeticShopScreen()),
+              ),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              key: const ValueKey('premium-entry'),
+              leading: const Icon(Icons.workspace_premium_outlined),
+              title: Text(l10n.premiumSettingsLabel),
+              subtitle: Text(premiumEnd != null
+                  ? l10n.premiumActiveLabel(
+                      '${premiumEnd.year}/${premiumEnd.month}/${premiumEnd.day}')
+                  : l10n.premiumInactiveLabel),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PaywallScreen()),
               ),
             ),
           ),

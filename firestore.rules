@@ -48,6 +48,14 @@ service cloud.firestore {
       allow read, write: if isOwner(uid);
     }
 
+    // ---------------- users/{uid}/entitlements/{docId} ----------------
+    // 購入で得た権利（プレミアムの期限）。users/{uid}本体は全サインイン
+    // ユーザーに読めるため分離し、本人のみ読み書き可。※サーバー側の
+    // レシート検証（Cloud Functions）が無い間はクライアント自己申告。
+    match /users/{uid}/entitlements/{docId} {
+      allow read, write: if isOwner(uid);
+    }
+
     // ---------------- users/{uid}/friends/{friendUid} ----------------
     match /users/{uid}/friends/{friendUid} {
       allow read: if isOwner(uid);
