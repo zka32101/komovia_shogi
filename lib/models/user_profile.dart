@@ -8,7 +8,12 @@
 /// fields should be added the same way `avatarId` was here — nullable,
 /// with a safe default when absent — so old documents never break.
 class UserProfile {
-  const UserProfile({required this.uid, this.displayName, this.avatarId});
+  const UserProfile({
+    required this.uid,
+    this.displayName,
+    this.avatarId,
+    this.frameId,
+  });
 
   final String uid;
 
@@ -24,20 +29,28 @@ class UserProfile {
   /// for display.
   final String? avatarId;
 
+  /// A `kAvatarFrames` id, or null for no frame. Always resolve for
+  /// display via `resolveDisplayedFrame`, which also hides a frame that
+  /// is (no longer) unlocked.
+  final String? frameId;
+
   UserProfile copyWith({
     String? displayName,
     Object? avatarId = _unset,
+    Object? frameId = _unset,
   }) {
     return UserProfile(
       uid: uid,
       displayName: displayName ?? this.displayName,
       avatarId: avatarId == _unset ? this.avatarId : avatarId as String?,
+      frameId: frameId == _unset ? this.frameId : frameId as String?,
     );
   }
 
   Map<String, Object?> toJson() => {
     'displayName': displayName,
     'avatarId': avatarId,
+    'frameId': frameId,
   };
 
   factory UserProfile.fromJson(String uid, Map<String, Object?> json) {
@@ -45,6 +58,7 @@ class UserProfile {
       uid: uid,
       displayName: json['displayName'] as String?,
       avatarId: json['avatarId'] as String?,
+      frameId: json['frameId'] as String?,
     );
   }
 }

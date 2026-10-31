@@ -14,6 +14,7 @@ import 'novelty_chess_screen.dart';
 import 'settings_screen.dart';
 import 'shogi_matching_screen.dart';
 import 'tournament_screen.dart';
+import '../widgets/framed_avatar.dart';
 
 /// Minimal hub screen linking the shogi game-engine demo (from the
 /// pre-existing `main.dart`) to the 5 new social-feature screens. Plain,
@@ -29,6 +30,8 @@ class HomeScreen extends ConsumerWidget {
     final uid = ref.watch(currentUidProvider);
     final displayName = 'Player ${uid?.substring(0, 6) ?? ''}';
     final avatarIcon = uid == null ? null : ref.watch(userAvatarIconProvider(uid));
+    final avatarFrame =
+        uid == null ? null : ref.watch(userAvatarFrameProvider(uid));
 
     return Scaffold(
       appBar: AppBar(
@@ -78,6 +81,7 @@ class HomeScreen extends ConsumerWidget {
                 // (アバター変更の入り口はここと設定画面の両方)。
                 _HomeTile(
                   leadingEmoji: avatarIcon?.emoji,
+                  leadingFrame: avatarFrame,
                   icon: Icons.settings,
                   title: displayName,
                   subtitle: l10n.settingsTile,
@@ -249,6 +253,7 @@ class _HomeTile extends StatelessWidget {
     this.subtitle,
     required this.onTap,
     this.leadingEmoji,
+    this.leadingFrame,
     this.badge,
   });
 
@@ -265,12 +270,16 @@ class _HomeTile extends StatelessWidget {
   /// `userAvatarIconProvider` always resolves to a real icon.
   final String? leadingEmoji;
 
+  /// The resolved (selected and unlocked) frame drawn around
+  /// [leadingEmoji], or null for none.
+  final AvatarFrame? leadingFrame;
+
   @override
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
         leading: leadingEmoji != null
-            ? Text(leadingEmoji!, style: const TextStyle(fontSize: 24))
+            ? FramedAvatar(emoji: leadingEmoji!, frame: leadingFrame)
             : Icon(icon),
         title: badge == null
             ? Text(title)

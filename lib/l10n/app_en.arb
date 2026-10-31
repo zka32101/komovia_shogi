@@ -270,5 +270,27 @@
   "boardSkinSectionLabel": "Board",
   "pieceSkinSectionLabel": "Pieces",
   "skinSelectedLabel": "In use",
-  "skinLockedLabel": "Locked"
+  "skinLockedLabel": "Locked",
+  "avatarFrameSectionLabel": "Avatar frame",
+  "changeAvatarFrameButton": "Change frame",
+  "chooseAvatarFrameTitle": "Choose a frame (earned by playing)",
+  "noAvatarFrameLabel": "No frame",
+  "avatarFrameRequirementGames": "Play {count} AI games",
+  "@avatarFrameRequirementGames": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "avatarFrameRequirementWins": "Win {count} AI games",
+  "@avatarFrameRequirementWins": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "avatarFrameRequirementRating": "Reach a rating of {count}",
+  "@avatarFrameRequirementRating": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
 }

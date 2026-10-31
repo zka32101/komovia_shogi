@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:komovia_shogi/l10n/app_localizations.dart';
+import 'package:komovia_shogi/services/leaderboard_service.dart';
 import 'package:komovia_shogi/services/user_profile_service.dart';
+import 'package:komovia_shogi/viewmodels/leaderboard_provider.dart';
 import 'package:komovia_shogi/viewmodels/user_profile_provider.dart';
 import 'package:komovia_shogi/views/screens/settings_screen.dart';
 
@@ -18,6 +20,8 @@ void main() {
         overrides: [
           userProfileServiceProvider
               .overrideWithValue(UserProfileService(firestore: firestore)),
+          leaderboardServiceProvider
+              .overrideWithValue(LeaderboardService(firestore: firestore)),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -55,7 +59,7 @@ void main() {
     await pumpScreen(tester, firestore: firestore);
     await tester.pump();
 
-    await tester.tap(find.byType(TextButton));
+    await tester.tap(find.byType(TextButton).first);
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('avatar-owl')));

@@ -34,6 +34,15 @@ class UserProfileService {
     return _doc(uid).set({'avatarId': avatarId}, SetOptions(merge: true));
   }
 
+  /// Persists the chosen avatar frame; null removes it (no frame).
+  /// Merge-set like [setAvatar]. Unlock state is not checked here — it
+  /// is re-checked at display time via `resolveDisplayedFrame`.
+  Future<void> setFrame(String uid, String? frameId) {
+    return _doc(uid).set({
+      'frameId': frameId ?? FieldValue.delete(),
+    }, SetOptions(merge: true));
+  }
+
   /// Makes sure a profile doc exists with at least [displayName] set —
   /// the write `FriendService._displayNameOf` has always depended on but
   /// that, before this feature, nothing in the app ever actually

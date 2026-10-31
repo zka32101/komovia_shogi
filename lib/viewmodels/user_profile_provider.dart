@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:komovia_core/komovia_core.dart';
 
 import '../models/user_profile.dart';
+import '../src/cosmetics/avatar_frames.dart';
 import '../services/user_profile_service.dart';
+import 'leaderboard_provider.dart';
 
 final userProfileServiceProvider = Provider<UserProfileService>(
   (ref) => UserProfileService(),
@@ -34,3 +36,27 @@ final ensureUserProfileProvider = Provider(
   (ref) => (String uid, String displayName) =>
       ref.read(userProfileServiceProvider).ensureProfile(uid, displayName),
 );
+
+final setUserFrameProvider = Provider(
+  (ref) => (String uid, String? frameId) =>
+      ref.read(userProfileServiceProvider).setFrame(uid, frameId),
+);
+
+/// [uid]の解放済みフレームid。ランキングエントリー（AI対局の対局数・
+/// 勝数・レーティング）から毎回導出する。読み込み中・未対局は空集合。
+final unlockedAvatarFrameIdsProvider =
+    FutureProvider.family<Set<String>, String>((ref, uid) async {
+      final entry = await ref.watch(leaderboardServiceProvider).getEntry(uid);
+      return unlockedAvatarFrameIds(entry);
+    });
+
+/// 表示用に解決した[uid]の選択フレーム。未選択・未解放・読み込み中はnull。
+final userAvatarFrameProvider = Provider.family<AvatarFrame?, String>((
+  ref,
+  uid,
+) {
+  final profile = ref.watch(userProfileStreamProvider(uid)).value;
+  final unlocked =
+      ref.watch(unlockedAvatarFrameIdsProvider(uid)).value ?? const {};
+  return resolveDisplayedFrame(profile?.frameId, unlocked);
+});
