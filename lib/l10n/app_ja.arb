@@ -398,5 +398,7 @@
   "cancelButton": "キャンセル",
   "@accountLinkedLabel": {"placeholders": {"email": {"type": "String"}}},
   "@accountLinkFailedMessage": {"placeholders": {"error": {"type": "String"}}},
-  "@deleteAccountFailedMessage": {"placeholders": {"error": {"type": "String"}}}
+  "@deleteAccountFailedMessage": {"placeholders": {"error": {"type": "String"}}},
+  "aiReviewDailyLimitMessage": "本日のAI分析は上限（{limit}回）に達しました。明日またお試しください",
+  "@aiReviewDailyLimitMessage": {"placeholders": {"limit": {"type": "int"}}}
 }

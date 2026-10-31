@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:komovia_core/komovia_core.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../services/ai_review_quota_service.dart';
 import '../../viewmodels/index.dart';
 
 /// 終局後の感想戦。komovia_core PR #7の共有`ReviewEngine`
@@ -26,7 +27,15 @@ class _ShogiReviewScreenState extends ConsumerState<ShogiReviewScreen> {
   int _done = 0;
   int _total = 0;
 
-  void _startReview() {
+  bool _limitReached = false;
+
+  Future<void> _startReview() async {
+    final allowed = await ref.read(consumeAiReviewQuotaProvider)();
+    if (!mounted) return;
+    if (!allowed) {
+      setState(() => _limitReached = true);
+      return;
+    }
     setState(() {
       _done = 0;
       _total = 0;
@@ -47,45 +56,58 @@ class _ShogiReviewScreenState extends ConsumerState<ShogiReviewScreen> {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.reviewTitle)),
-      body: _analysisFuture == null
+      body: _limitReached
           ? Center(
-              child: FilledButton.icon(
-                onPressed: _startReview,
-                icon: const Icon(Icons.insights),
-                label: Text(l10n.startReviewButton),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  l10n.aiReviewDailyLimitMessage(
+                      AiReviewQuotaService.dailyLimit),
+                  textAlign: TextAlign.center,
+                ),
               ),
             )
-          : FutureBuilder<GameAnalysis>(
-              future: _analysisFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState != ConnectionState.done) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const CircularProgressIndicator(),
-                          const SizedBox(height: 16),
-                          Text(
-                            _total == 0
-                                ? l10n.reviewingMessage
-                                : l10n.reviewingProgressMessage(_done, _total),
+          : _analysisFuture == null
+              ? Center(
+                  child: FilledButton.icon(
+                    onPressed: _startReview,
+                    icon: const Icon(Icons.insights),
+                    label: Text(l10n.startReviewButton),
+                  ),
+                )
+              : FutureBuilder<GameAnalysis>(
+                  future: _analysisFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState != ConnectionState.done) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(),
+                              const SizedBox(height: 16),
+                              Text(
+                                _total == 0
+                                    ? l10n.reviewingMessage
+                                    : l10n.reviewingProgressMessage(
+                                        _done, _total),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text(l10n.reviewFailedMessage('${snapshot.error}')),
-                  );
-                }
-                final analysis = snapshot.data!;
-                return _AnalysisBody(analysis: analysis);
-              },
-            ),
+                        ),
+                      );
+                    }
+                    if (snapshot.hasError) {
+                      return Center(
+                        child:
+                            Text(l10n.reviewFailedMessage('${snapshot.error}')),
+                      );
+                    }
+                    final analysis = snapshot.data!;
+                    return _AnalysisBody(analysis: analysis);
+                  },
+                ),
     );
   }
 }
@@ -119,7 +141,8 @@ class _AnalysisBody extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        Text(l10n.moveByMoveLabel, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(l10n.moveByMoveLabel,
+            style: const TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         for (final move in analysis.moves) _MoveTile(move: move),
       ],

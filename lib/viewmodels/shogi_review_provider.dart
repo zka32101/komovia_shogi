@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:komovia_core/komovia_core.dart';
 import 'package:komovia_shogi/komovia_shogi.dart';
 
+import '../services/ai_review_quota_service.dart';
 import 'auth_provider.dart';
 import 'shogi_game_provider.dart';
 
@@ -52,3 +53,22 @@ final runShogiReviewProvider =
             );
       };
     });
+
+final aiReviewQuotaServiceProvider = Provider<AiReviewQuotaService>(
+  (ref) => AiReviewQuotaService(),
+);
+
+/// 感想戦を1回分消費する。上限到達ならfalse。サインインしていない
+/// （uidが無い/Firebase未初期化の）場合は回数を記録できないため許可する。
+final consumeAiReviewQuotaProvider = Provider<Future<bool> Function()>((ref) {
+  return () async {
+    String? uid;
+    try {
+      uid = ref.read(currentUidProvider);
+    } catch (_) {
+      uid = null;
+    }
+    if (uid == null) return true;
+    return ref.read(aiReviewQuotaServiceProvider).tryConsume(uid);
+  };
+});

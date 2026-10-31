@@ -42,6 +42,12 @@ service cloud.firestore {
       allow read, write: if isOwner(uid);
     }
 
+    // ---------------- users/{uid}/ai_review_quota/{docId} ----------------
+    // 感想戦（AI検討）の1日あたり無料利用回数。本人のみ読み書き可。
+    match /users/{uid}/ai_review_quota/{docId} {
+      allow read, write: if isOwner(uid);
+    }
+
     // ---------------- users/{uid}/friends/{friendUid} ----------------
     match /users/{uid}/friends/{friendUid} {
       allow read: if isOwner(uid);
