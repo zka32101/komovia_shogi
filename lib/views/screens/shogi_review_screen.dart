@@ -4,6 +4,7 @@ import 'package:komovia_core/komovia_core.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/ai_review_quota_service.dart';
+import '../../services/purchase_service.dart';
 import '../../viewmodels/index.dart';
 
 /// 終局後の感想戦。komovia_core PR #7の共有`ReviewEngine`
@@ -27,15 +28,18 @@ class _ShogiReviewScreenState extends ConsumerState<ShogiReviewScreen> {
   int _done = 0;
   int _total = 0;
 
-  bool _limitReached = false;
+  /// 拒否された理由（許可されていればnull）。
+  AiReviewAccess? _denied;
+  bool _purchasing = false;
 
   Future<void> _startReview() async {
-    final allowed = await ref.read(consumeAiReviewQuotaProvider)();
+    final access = await ref.read(consumeAiReviewQuotaProvider)();
     if (!mounted) return;
-    if (!allowed) {
-      setState(() => _limitReached = true);
+    if (access != AiReviewAccess.allowed) {
+      setState(() => _denied = access);
       return;
     }
+    _denied = null;
     setState(() {
       _done = 0;
       _total = 0;
@@ -51,22 +55,76 @@ class _ShogiReviewScreenState extends ConsumerState<ShogiReviewScreen> {
     });
   }
 
+  /// 無料枠を使い切ったときの案内。AI分析プランをその場で購入できる。
+  Widget _buildUpsell(AppLocalizations l10n) {
+    final product =
+        ref.watch(aiAnalysisPlanProductProvider(AiAnalysisPlan.monthly)).value;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l10n.aiReviewDailyLimitMessage(AiReviewQuotaService.dailyLimit),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(l10n.aiAnalysisPlanUpsellDescription,
+                textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              key: const ValueKey('ai-analysis-plan-upsell-button'),
+              onPressed: _purchasing ? null : _purchaseAiAnalysisPlan,
+              icon: const Icon(Icons.auto_awesome),
+              label: Text(l10n.aiAnalysisPlanSubscribeButton(
+                  product?.price ?? l10n.aiAnalysisPlanFallbackPrice)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _purchaseAiAnalysisPlan() async {
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _purchasing = true);
+    try {
+      await ref.read(purchaseAiAnalysisPlanProvider)(AiAnalysisPlan.monthly);
+      messenger.showSnackBar(
+          SnackBar(content: Text(l10n.purchaseSuccessMessage)));
+      if (!mounted) return;
+      setState(() => _denied = null);
+      await _startReview();
+    } on PurchaseCanceledException {
+      messenger.showSnackBar(
+          SnackBar(content: Text(l10n.purchaseCanceledMessage)));
+    } on PurchaseUnavailableException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      messenger.showSnackBar(
+          SnackBar(content: Text(l10n.purchaseFailedMessage('$e'))));
+    } finally {
+      if (mounted) setState(() => _purchasing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.reviewTitle)),
-      body: _limitReached
+      body: _denied == AiReviewAccess.signInRequired
           ? Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text(
-                  l10n.aiReviewDailyLimitMessage(
-                      AiReviewQuotaService.dailyLimit),
-                  textAlign: TextAlign.center,
-                ),
+                child: Text(l10n.aiReviewSignInRequiredMessage,
+                    textAlign: TextAlign.center),
               ),
             )
+          : _denied == AiReviewAccess.limitReached
+          ? _buildUpsell(l10n)
           : _analysisFuture == null
               ? Center(
                   child: FilledButton.icon(

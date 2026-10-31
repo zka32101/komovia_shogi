@@ -49,4 +49,21 @@ class EntitlementService {
     }, SetOptions(merge: true));
     return true;
   }
+
+  /// AI分析プランを[length]だけ付与する（プレミアムとは独立したフィールド）。
+  /// [skipIfAlreadyActive]は[grantPremium]と同じ理由。
+  Future<bool> grantAiAnalysisPlan(
+    String uid,
+    Duration length, {
+    bool skipIfAlreadyActive = false,
+  }) async {
+    final now = _clock();
+    if (skipIfAlreadyActive && (await get(uid)).hasAiAnalysisPlan(now)) {
+      return false;
+    }
+    await _doc(uid).set({
+      'aiAnalysisPlanEndDate': now.add(length).toIso8601String(),
+    }, SetOptions(merge: true));
+    return true;
+  }
 }

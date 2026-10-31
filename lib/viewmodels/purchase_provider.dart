@@ -46,6 +46,18 @@ final isPremiumActiveProvider = Provider<bool>((ref) {
   return e.isPremiumActive(DateTime.now());
 });
 
+/// AI分析プランが現在有効か。
+final hasAiAnalysisPlanProvider = Provider<bool>((ref) {
+  final e = ref.watch(userEntitlementsProvider).value ?? UserEntitlements.none;
+  return e.hasAiAnalysisPlan(DateTime.now());
+});
+
+/// AI分析プランのストア情報。未登録・未接続ならnull。
+final aiAnalysisPlanProductProvider =
+    FutureProvider.family<ProductDetails?, AiAnalysisPlan>((ref, plan) {
+  return ref.watch(purchaseServiceProvider).fetchProduct(plan.productId);
+});
+
 /// ストア上の商品情報（現地通貨の価格表示用）。未登録・未接続ならnull。
 final subscriptionProductProvider =
     FutureProvider.family<ProductDetails?, SubscriptionPlan>((ref, plan) {
@@ -65,16 +77,28 @@ Future<void> handlePurchaseUpdates({
     switch (purchase.status) {
       case PurchaseStatus.purchased:
       case PurchaseStatus.restored:
+        if (uid == null) break;
         final plan = SubscriptionPlan.values
             .where((p) => p.productId == purchase.productID)
             .firstOrNull;
-        if (plan == null || uid == null) break;
+        final aiPlan = AiAnalysisPlan.values
+            .where((p) => p.productId == purchase.productID)
+            .firstOrNull;
+        if (plan == null && aiPlan == null) break;
         try {
-          await entitlementService.grantPremium(
-            uid,
-            plan.entitlementLength,
-            skipIfAlreadyActive: true,
-          );
+          if (plan != null) {
+            await entitlementService.grantPremium(
+              uid,
+              plan.entitlementLength,
+              skipIfAlreadyActive: true,
+            );
+          } else {
+            await entitlementService.grantAiAnalysisPlan(
+              uid,
+              aiPlan!.entitlementLength,
+              skipIfAlreadyActive: true,
+            );
+          }
           await purchaseService.completePurchase(purchase);
         } catch (_) {
           // 完了通知しない → ストアが再配信し、次の機会に再試行される。
@@ -124,7 +148,8 @@ final restorePurchasesProvider = Provider<Future<bool> Function()>((ref) {
     final uid = _uidOrNull(ref);
     if (uid == null) return false;
     final e = await ref.read(entitlementServiceProvider).get(uid);
-    return e.isPremiumActive(DateTime.now());
+    final now = DateTime.now();
+    return e.isPremiumActive(now) || e.hasAiAnalysisPlan(now);
   };
 });
 
@@ -146,6 +171,24 @@ final purchaseSubscriptionProvider =
       grant: () => ref
           .read(entitlementServiceProvider)
           .grantPremium(uid, plan.entitlementLength),
+    );
+  };
+});
+
+/// AI分析プラン（別売り月額）を購入する。フローはプレミアムと共通。
+final purchaseAiAnalysisPlanProvider =
+    Provider<Future<void> Function(AiAnalysisPlan plan)>((ref) {
+  return (plan) {
+    final uid = _uidOrNull(ref);
+    if (uid == null) {
+      throw PurchaseUnavailableException('購入にはサインインが必要です。');
+    }
+    return runPurchaseFlow(
+      purchaseService: ref.read(purchaseServiceProvider),
+      productId: plan.productId,
+      grant: () => ref
+          .read(entitlementServiceProvider)
+          .grantAiAnalysisPlan(uid, plan.entitlementLength),
     );
   };
 });
@@ -201,6 +244,8 @@ Future<void> runPurchaseFlow({
     await grant();
     await purchaseService.completePurchase(purchase);
   } finally {
-    await subscription.cancel();
+    // awaitしない: broadcastストリームのcancel()は完了が遅れることがあり、
+    // 購入結果（成功/キャンセル）の通知を不必要に待たせるため。
+    unawaited(subscription.cancel());
   }
 }
