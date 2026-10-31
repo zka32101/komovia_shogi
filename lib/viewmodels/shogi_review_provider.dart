@@ -4,6 +4,7 @@ import 'package:komovia_shogi/komovia_shogi.dart';
 
 import '../services/ai_review_quota_service.dart';
 import 'auth_provider.dart';
+import 'purchase_provider.dart';
 import 'shogi_game_provider.dart';
 
 /// komovia_core PR #7で追加された共有`EngineReviewEngine`を、既存の
@@ -58,9 +59,28 @@ final aiReviewQuotaServiceProvider = Provider<AiReviewQuotaService>(
   (ref) => AiReviewQuotaService(),
 );
 
-/// 感想戦を1回分消費する。上限到達ならfalse。サインインしていない
-/// （uidが無い/Firebase未初期化の）場合は回数を記録できないため許可する。
-final consumeAiReviewQuotaProvider = Provider<Future<bool> Function()>((ref) {
+/// 感想戦を始めてよいかの判定結果。
+enum AiReviewAccess {
+  /// 実行してよい（無料枠を1回消費した、またはAI分析プラン加入中）。
+  allowed,
+
+  /// 本日の無料枠を使い切った（AI分析プランへの加入を案内する）。
+  limitReached,
+
+  /// uidが無く回数を記録できない（サインイン失敗・Firebase未初期化）。
+  signInRequired,
+}
+
+/// 感想戦を1回分消費する。
+///
+/// - AI分析プラン加入中: 無料枠を消費せず無制限に許可。
+/// - それ以外: 1日[AiReviewQuotaService.dailyLimit]回まで。
+/// - uidが無い: 拒否（[AiReviewAccess.signInRequired]）。PR #45では
+///   「記録できないので許可」していたが、それだと匿名サインインに
+///   失敗した端末だけ無制限になってしまう。起動時に必ず匿名サインインする
+///   ため通常は到達しないが、到達した場合は無料で使い放題にしない。
+final consumeAiReviewQuotaProvider =
+    Provider<Future<AiReviewAccess> Function()>((ref) {
   return () async {
     String? uid;
     try {
@@ -68,7 +88,13 @@ final consumeAiReviewQuotaProvider = Provider<Future<bool> Function()>((ref) {
     } catch (_) {
       uid = null;
     }
-    if (uid == null) return true;
-    return ref.read(aiReviewQuotaServiceProvider).tryConsume(uid);
+    if (uid == null) return AiReviewAccess.signInRequired;
+    final entitlements =
+        await ref.read(entitlementServiceProvider).get(uid);
+    if (entitlements.hasAiAnalysisPlan(DateTime.now())) {
+      return AiReviewAccess.allowed;
+    }
+    final ok = await ref.read(aiReviewQuotaServiceProvider).tryConsume(uid);
+    return ok ? AiReviewAccess.allowed : AiReviewAccess.limitReached;
   };
 });

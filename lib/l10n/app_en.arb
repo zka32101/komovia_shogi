@@ -517,5 +517,25 @@
       }
     }
   },
-  "paywallLegalNote": "Payment is charged to your store account. You can cancel the subscription anytime in your store settings."
+  "paywallLegalNote": "Payment is charged to your store account. You can cancel the subscription anytime in your store settings.",
+  "aiReviewSignInRequiredMessage": "You need to be signed in to use AI analysis. Check your connection and restart the app.",
+  "aiAnalysisPlanUpsellDescription": "Subscribe to the AI Analysis Plan for unlimited post-game AI reviews.",
+  "aiAnalysisPlanSubscribeButton": "Get the AI Analysis Plan ({price})",
+  "@aiAnalysisPlanSubscribeButton": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "aiAnalysisPlanFallbackPrice": "¥990 / month",
+  "aiAnalysisPlanSettingsLabel": "AI Analysis Plan",
+  "aiAnalysisPlanActiveLabel": "Active (until {date}) - unlimited AI reviews",
+  "@aiAnalysisPlanActiveLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -49,6 +49,19 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         }
       });
 
+  Future<void> _purchaseAiPlan() => _run((l10n) async {
+        try {
+          await ref.read(purchaseAiAnalysisPlanProvider)(AiAnalysisPlan.monthly);
+          _snack(l10n.purchaseSuccessMessage);
+        } on PurchaseCanceledException {
+          _snack(l10n.purchaseCanceledMessage);
+        } on PurchaseUnavailableException catch (e) {
+          _snack(e.message);
+        } catch (e) {
+          _snack(l10n.purchaseFailedMessage('$e'));
+        }
+      });
+
   Future<void> _restore() => _run((l10n) async {
         try {
           final restored = await ref.read(restorePurchasesProvider)();
@@ -69,6 +82,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final active = entitlements?.isPremiumActive(DateTime.now()) ?? false;
     final product =
         ref.watch(subscriptionProductProvider(SubscriptionPlan.monthly)).value;
+    final aiProduct =
+        ref.watch(aiAnalysisPlanProductProvider(AiAnalysisPlan.monthly)).value;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.paywallTitle)),
@@ -111,6 +126,28 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               child: Text(l10n.subscribeButton),
             ),
           ],
+          const SizedBox(height: 24),
+          // AI分析プラン（プレミアムとは別売り）。
+          Card(
+            child: ListTile(
+              key: const ValueKey('ai-analysis-plan-entry'),
+              leading: const Icon(Icons.auto_awesome),
+              title: Text(l10n.aiAnalysisPlanSettingsLabel),
+              subtitle: Text(
+                (entitlements?.hasAiAnalysisPlan(DateTime.now()) ?? false)
+                    ? l10n.aiAnalysisPlanActiveLabel(
+                        _formatDate(entitlements!.aiAnalysisPlanEndDate!))
+                    : l10n.aiAnalysisPlanUpsellDescription,
+              ),
+            ),
+          ),
+          if (!(entitlements?.hasAiAnalysisPlan(DateTime.now()) ?? false))
+            OutlinedButton(
+              key: const ValueKey('ai-analysis-plan-subscribe-button'),
+              onPressed: _busy ? null : _purchaseAiPlan,
+              child: Text(l10n.aiAnalysisPlanSubscribeButton(
+                  aiProduct?.price ?? l10n.aiAnalysisPlanFallbackPrice)),
+            ),
           const SizedBox(height: 8),
           TextButton(
             key: const ValueKey('restore-purchases-button'),

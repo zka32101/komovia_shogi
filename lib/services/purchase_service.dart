@@ -14,6 +14,21 @@ extension SubscriptionPlanProductId on SubscriptionPlan {
       };
 }
 
+/// AI分析プラン — プレミアム（[SubscriptionPlan]）とは独立した別売りの月額商品
+/// （¥990/月）。片方・両方・どちらも無し、のいずれもあり得るため、
+/// komovia_goと同じくSubscriptionPlanの一種ではなく兄弟型にしている。
+enum AiAnalysisPlan { monthly }
+
+extension AiAnalysisPlanProductId on AiAnalysisPlan {
+  String get productId => switch (this) {
+        AiAnalysisPlan.monthly => PurchaseService.aiAnalysisMonthlyProductId,
+      };
+
+  Duration get entitlementLength => switch (this) {
+        AiAnalysisPlan.monthly => const Duration(days: 30),
+      };
+}
+
 /// プラットフォームの`in_app_purchase`プラグインの薄いラッパー
 /// （komovia_goの`PurchaseService`と同じ形）。商品IDはApp Store Connect /
 /// Play Consoleに登録されるまで購入できない。
@@ -24,7 +39,12 @@ class PurchaseService {
   PurchaseService({InAppPurchase? iap}) : _iapOverride = iap;
 
   static const String premiumMonthlyProductId = 'shogido_premium_monthly';
-  static const Set<String> productIds = {premiumMonthlyProductId};
+  static const String aiAnalysisMonthlyProductId =
+      'shogido_ai_analysis_monthly';
+  static const Set<String> productIds = {
+    premiumMonthlyProductId,
+    aiAnalysisMonthlyProductId,
+  };
 
   final InAppPurchase? _iapOverride;
   InAppPurchase get _iap => _iapOverride ?? InAppPurchase.instance;

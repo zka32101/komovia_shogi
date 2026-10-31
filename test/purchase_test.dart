@@ -192,6 +192,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('subscribe-button')));
       await tester.pumpAndSettle();
+      expect(find.text('ご購入ありがとうございます！'), findsOneWidget);
       expect(find.byKey(const ValueKey('premium-active')), findsOneWidget);
     });
 
@@ -202,6 +203,33 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('subscribe-button')));
       await tester.pumpAndSettle();
       expect(find.textContaining('現在ご購入いただけません'), findsOneWidget);
+    });
+  });
+
+  group('AI分析プラン', () {
+    test('is independent of premium', () async {
+      await entitlements.grantAiAnalysisPlan('u1', const Duration(days: 30));
+      final e = await entitlements.get('u1');
+      expect(e.hasAiAnalysisPlan(now), isTrue);
+      expect(e.isPremiumActive(now), isFalse);
+      expect(e.hasAiAnalysisPlan(now.add(const Duration(days: 31))), isFalse);
+    });
+
+    test('recovery grants the AI plan product, not premium', () async {
+      final fake = FakePurchaseService();
+      await handlePurchaseUpdates(
+        purchases: [
+          purchase(PurchaseService.aiAnalysisMonthlyProductId,
+              PurchaseStatus.restored)
+        ],
+        purchaseService: fake,
+        entitlementService: entitlements,
+        uid: 'u1',
+      );
+      final e = await entitlements.get('u1');
+      expect(e.hasAiAnalysisPlan(now), isTrue);
+      expect(e.isPremiumActive(now), isFalse);
+      expect(fake.completed, [PurchaseService.aiAnalysisMonthlyProductId]);
     });
   });
 }

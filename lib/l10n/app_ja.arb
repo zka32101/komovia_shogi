@@ -633,5 +633,25 @@
       }
     }
   },
-  "paywallLegalNote": "お支払いはストアのアカウントに請求されます。サブスクリプションはストアの設定からいつでも解約できます。"
+  "paywallLegalNote": "お支払いはストアのアカウントに請求されます。サブスクリプションはストアの設定からいつでも解約できます。",
+  "aiReviewSignInRequiredMessage": "AI分析を利用するにはサインインが必要です。通信状況を確認してアプリを再起動してください",
+  "aiAnalysisPlanUpsellDescription": "AI分析プランに加入すると、感想戦（AI検討）を回数無制限で利用できます",
+  "aiAnalysisPlanSubscribeButton": "AI分析プランに加入（{price}）",
+  "@aiAnalysisPlanSubscribeButton": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "aiAnalysisPlanFallbackPrice": "¥990/月",
+  "aiAnalysisPlanSettingsLabel": "AI分析プラン",
+  "aiAnalysisPlanActiveLabel": "加入中（{date}まで）・感想戦が回数無制限",
+  "@aiAnalysisPlanActiveLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }
