@@ -36,6 +36,12 @@ service cloud.firestore {
       allow read, write: if isOwner(uid);
     }
 
+    // ---------------- users/{uid}/tsume_rush/{docId} ----------------
+    // 詰将棋ラッシュの自己ベスト。本人のみ読み書き可。
+    match /users/{uid}/tsume_rush/{docId} {
+      allow read, write: if isOwner(uid);
+    }
+
     // ---------------- users/{uid}/friends/{friendUid} ----------------
     match /users/{uid}/friends/{friendUid} {
       allow read: if isOwner(uid);
