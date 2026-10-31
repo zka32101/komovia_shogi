@@ -26,6 +26,27 @@ void main() {
     entitlements = EntitlementService(firestore: db, clock: () => now);
   });
 
+  group('SubscriptionPlan (komovia_core)', () {
+    test('only monthly maps to a Shogi product id', () {
+      expect(SubscriptionPlan.monthly.productId,
+          PurchaseService.premiumMonthlyProductId);
+      expect(SubscriptionPlan.annual.productId, isNull);
+      expect(SubscriptionPlan.lifetime.productId, isNull);
+    });
+
+    test('monthly keeps the 30-day entitlement length', () {
+      expect(
+          SubscriptionPlan.monthly.entitlementLength, const Duration(days: 30));
+    });
+
+    test('purchase product id resolves back to monthly', () {
+      final plan = SubscriptionPlan.values
+          .where((p) => p.productId == PurchaseService.premiumMonthlyProductId)
+          .single;
+      expect(plan, SubscriptionPlan.monthly);
+    });
+  });
+
   group('UserEntitlements', () {
     test('active only before the end date', () {
       final e = UserEntitlements(premiumEndDate: DateTime(2026, 11, 1));
@@ -154,8 +175,8 @@ void main() {
           overrides: [
             currentUidProvider.overrideWithValue('u1'),
             purchaseServiceProvider.overrideWithValue(fake),
-            entitlementServiceProvider.overrideWithValue(EntitlementService(
-                firestore: db, clock: DateTime.now)),
+            entitlementServiceProvider.overrideWithValue(
+                EntitlementService(firestore: db, clock: DateTime.now)),
             restoreSettleDelayProvider.overrideWithValue(Duration.zero),
           ],
           child: const MaterialApp(
