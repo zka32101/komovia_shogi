@@ -64,7 +64,7 @@ class _KomoviaShogiAppState extends ConsumerState<KomoviaShogiApp> {
       board: boardSkinStyleById(ref.watch(selectedBoardSkinIdProvider)),
       piece: pieceSkinStyleById(ref.watch(selectedPieceSkinIdProvider)),
       child: MaterialApp(
-      title: 'Komovia Shogi',
+      title: '将棋道',
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       theme:
