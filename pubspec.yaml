@@ -35,6 +35,15 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   fake_cloud_firestore: ^2.5.2
+  flutter_launcher_icons: ^0.13.1
+
+# `dart run flutter_launcher_icons` regenerates every Android
+# mipmap-*/ic_launcher.png and the iOS AppIcon.appiconset PNGs from
+# assets/images/app_icon_master.png.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/images/app_icon_master.png
 
 flutter:
   generate: true
