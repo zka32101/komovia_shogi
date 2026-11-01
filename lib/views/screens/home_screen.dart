@@ -48,7 +48,7 @@ class HomeScreen extends ConsumerWidget {
                   onPressed: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => NotificationScreen(uid: uid),
+                      builder: (_) => NotificationScreen(uid: uid, displayName: displayName),
                     ),
                   ),
                 ),

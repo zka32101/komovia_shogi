@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:komovia_core/komovia_core.dart';
@@ -32,6 +34,16 @@ void main() async {
   } catch (_) {
     // Placeholder Firebase config won't actually initialize against a real
     // backend; swallow so the shogi demo screen still runs standalone.
+  }
+  // Route uncaught errors to Crashlytics (same wiring as komovia_go's
+  // main.dart). Only when Firebase actually initialized, since
+  // FirebaseCrashlytics.instance throws without a default app.
+  if (Firebase.apps.isNotEmpty) {
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
   }
   // 期間限定イベントの開催期間（Remote Config）。キャッシュ値を有効化し、
   // 最新値の取得はバックグラウンド。失敗しても全イベント非表示で起動する。

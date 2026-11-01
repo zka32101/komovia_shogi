@@ -5,16 +5,28 @@ import '../../l10n/app_localizations.dart';
 import '../../viewmodels/index.dart';
 
 class FriendsScreen extends ConsumerWidget {
-  const FriendsScreen({super.key, required this.uid, required this.displayName});
+  const FriendsScreen({
+    super.key,
+    required this.uid,
+    required this.displayName,
+    this.initialTabIndex = 0,
+  });
+
+  /// 「招待待ち」タブのインデックス（friend_request通知からの遷移先）。
+  static const int pendingTabIndex = 1;
 
   final String uid;
   final String displayName;
+
+  /// 初期表示するタブ。通知から開いたときに招待待ちタブを直接開く。
+  final int initialTabIndex;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     return DefaultTabController(
       length: 2,
+      initialIndex: initialTabIndex,
       child: Scaffold(
         appBar: AppBar(
           title: Text(l10n.friendsTitle),
