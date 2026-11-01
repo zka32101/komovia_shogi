@@ -674,5 +674,28 @@
         "type": "String"
       }
     }
-  }
+  },
+  "invitationsTab": "対局の招待",
+  "noGameInvitationsMessage": "対局の招待はありません",
+  "inviteToGameTooltip": "対局に招待",
+  "gameInvitationFrom": "{name}さんからの対局の招待",
+  "@gameInvitationFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gameInvitationSentMessage": "招待を送りました",
+  "gameInvitationSendFailedMessage": "招待を送れませんでした",
+  "gameInvitationUnavailableMessage": "この招待は既に無効です",
+  "gameInvitationNotificationTitle": "{name}さんから対局の招待が届きました",
+  "@gameInvitationNotificationTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gameInvitationNotificationBody": "「フレンド」→「対局の招待」タブで承認できます"
 }

@@ -18,13 +18,13 @@ class NotificationScreen extends ConsumerWidget {
   final String? displayName;
 
   String get _resolvedDisplayName =>
-      displayName ??
-      'Player ${uid.length >= 6 ? uid.substring(0, 6) : uid}';
+      displayName ?? 'Player ${uid.length >= 6 ? uid.substring(0, 6) : uid}';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final notifications = ref.watch(notificationsStreamProvider(uid)).value ?? [];
+    final notifications =
+        ref.watch(notificationsStreamProvider(uid)).value ?? [];
     return Scaffold(
       appBar: AppBar(title: Text(l10n.notificationsTitle)),
       body: notifications.isEmpty
@@ -34,7 +34,9 @@ class NotificationScreen extends ConsumerWidget {
                   .map(
                     (n) => ListTile(
                       leading: Icon(
-                        n.isRead ? Icons.notifications_none : Icons.notifications,
+                        n.isRead
+                            ? Icons.notifications_none
+                            : Icons.notifications,
                       ),
                       title: Text(n.title),
                       subtitle: Text(n.body),
@@ -54,6 +56,8 @@ class NotificationScreen extends ConsumerWidget {
   ///   → ShogiPvpGameScreen
   /// - friend_request: フレンド申請（friend_provider.dart参照）→
   ///   FriendsScreenの「招待待ち」タブ
+  /// - game_invitation: 対局の招待（game_invitation_provider.dart参照）→
+  ///   FriendsScreenの「対局の招待」タブ
   /// - tournament_match: ペアリング確定（TournamentServiceの通知、
   ///   data.tournamentIdを持つ）→ TournamentBracketScreen
   void _openNotificationTarget(BuildContext context, AppNotification n) {
@@ -67,6 +71,12 @@ class NotificationScreen extends ConsumerWidget {
           uid: uid,
           displayName: _resolvedDisplayName,
           initialTabIndex: FriendsScreen.pendingTabIndex,
+        );
+      case 'game_invitation':
+        target = FriendsScreen(
+          uid: uid,
+          displayName: _resolvedDisplayName,
+          initialTabIndex: FriendsScreen.invitationsTabIndex,
         );
       case 'tournament_match':
         final tournamentId = n.data?['tournamentId'] as String?;

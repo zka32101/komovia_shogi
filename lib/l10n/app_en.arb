@@ -558,5 +558,28 @@
         "type": "String"
       }
     }
-  }
+  },
+  "invitationsTab": "Invitations",
+  "noGameInvitationsMessage": "No game invitations",
+  "inviteToGameTooltip": "Invite to a game",
+  "gameInvitationFrom": "Game invitation from {name}",
+  "@gameInvitationFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gameInvitationSentMessage": "Invitation sent",
+  "gameInvitationSendFailedMessage": "Could not send the invitation",
+  "gameInvitationUnavailableMessage": "This invitation is no longer available",
+  "gameInvitationNotificationTitle": "{name} invited you to a game",
+  "@gameInvitationNotificationTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gameInvitationNotificationBody": "Open Friends → Invitations to accept"
 }
