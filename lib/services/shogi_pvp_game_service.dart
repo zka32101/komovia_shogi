@@ -58,6 +58,31 @@ class ShogiPvpGameService {
     return ShogiPvpGame.fromFirestore(doc);
   }
 
+  /// [uid]が対局者として参加している進行中の対局一覧（最後に動いた順）。
+  /// 先手・後手が別フィールドのため2クエリをマージする（どちらも等価条件
+  /// のみなので複合インデックス不要）。
+  Future<List<ShogiPvpGame>> getActiveGamesFor(String uid) async {
+    final results = await Future.wait([
+      _games
+          .where('senteUid', isEqualTo: uid)
+          .where('status', isEqualTo: 'active')
+          .get(),
+      _games
+          .where('goteUid', isEqualTo: uid)
+          .where('status', isEqualTo: 'active')
+          .get(),
+    ]);
+    final byId = <String, ShogiPvpGame>{};
+    for (final snap in results) {
+      for (final doc in snap.docs) {
+        byId[doc.id] = ShogiPvpGame.fromFirestore(doc);
+      }
+    }
+    final games = byId.values.toList()
+      ..sort((a, b) => b.lastActivityAt.compareTo(a.lastActivityAt));
+    return games;
+  }
+
   Stream<ShogiPvpGame> watchGame(String gameId) =>
       _games.doc(gameId).snapshots().map(ShogiPvpGame.fromFirestore);
 

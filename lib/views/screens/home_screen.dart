@@ -15,6 +15,7 @@ import 'tsume_menu_screen.dart';
 import 'novelty_chess_screen.dart';
 import 'settings_screen.dart';
 import 'shogi_matching_screen.dart';
+import 'shogi_pvp_games_list_screen.dart';
 import 'tournament_screen.dart';
 import '../widgets/framed_avatar.dart';
 
@@ -178,6 +179,16 @@ class HomeScreen extends ConsumerWidget {
                         uid: uid,
                         displayName: displayName,
                       ),
+                    ),
+                  ),
+                ),
+                _HomeTile(
+                  icon: Icons.sports_esports,
+                  title: l10n.pvpGamesListTile,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ShogiPvpGamesListScreen(),
                     ),
                   ),
                 ),

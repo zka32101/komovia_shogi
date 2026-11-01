@@ -4,6 +4,7 @@ import 'package:komovia_core/komovia_core.dart';
 
 import '../models/shogi_pvp_game.dart';
 import '../services/shogi_pvp_game_service.dart';
+import 'notification_provider.dart';
 
 /// komovia_goの`pvp_game_provider.dart`と同じ役割（将棋向け）。
 /// `ShogiPvpGameService`の薄いRiverpodラッパー — サービス層のテストは
@@ -73,5 +74,60 @@ final createShogiPvpGameProvider = Provider<
       goteDisplayName: goteDisplayName,
       matchId: matchId,
     );
+  };
+});
+
+/// [uid]の進行中PvP対局一覧（`ShogiPvpGamesListScreen`用）。
+final userActiveShogiPvpGamesProvider =
+    FutureProvider.family<List<ShogiPvpGame>, String>((ref, uid) {
+  return ref.watch(shogiPvpGameServiceProvider).getActiveGamesFor(uid);
+});
+
+/// 終局した対局[previous]の再戦を[requesterUid]が申し込む。先後を入れ替えた
+/// 新規対局を[createShogiPvpGameProvider]経由で作成し、相手へ
+/// `pvp_challenge`通知を送る（best-effort）。komovia_goの
+/// `rematchPvpGameProvider`/komovia_reversiaの
+/// `rematchReversiaPvpGameProvider`と同じ役割。対局中の対局・対局者以外
+/// からの申し込みはnullを返して拒否する。将棋のPvP対局は現状トーナメントと
+/// 紐付かない（`tournamentId`フィールド自体が無い）ため、その判定は不要。
+/// 通知文言は画面側でローカライズして渡す。
+final rematchShogiPvpGameProvider = Provider<
+    Future<ShogiPvpGame?> Function({
+      required ShogiPvpGame previous,
+      required String requesterUid,
+      required String notificationTitle,
+      required String notificationBody,
+    })>((ref) {
+  return ({
+    required previous,
+    required requesterUid,
+    required notificationTitle,
+    required notificationBody,
+  }) async {
+    if (!previous.isFinished) return null;
+    if (previous.playerColorOf(requesterUid) == 0) return null;
+
+    final game = await ref.read(createShogiPvpGameProvider)(
+      senteUid: previous.goteUid,
+      senteDisplayName: previous.goteDisplayName,
+      goteUid: previous.senteUid,
+      goteDisplayName: previous.senteDisplayName,
+    );
+
+    final opponentUid = requesterUid == previous.senteUid
+        ? previous.goteUid
+        : previous.senteUid;
+    try {
+      await ref.read(notificationServiceProvider).send(
+            uid: opponentUid,
+            title: notificationTitle,
+            body: notificationBody,
+            type: 'pvp_challenge',
+            data: {'gameId': game.id},
+          );
+    } catch (_) {
+      // best-effort: 通知に失敗しても再戦対局自体は成立している
+    }
+    return game;
   };
 });
