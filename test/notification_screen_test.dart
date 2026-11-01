@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:komovia_shogi/l10n/app_localizations.dart';
 import 'package:komovia_shogi/services/friend_service.dart';
+import 'package:komovia_shogi/services/game_invitation_service.dart';
 import 'package:komovia_shogi/services/notification_service.dart';
 import 'package:komovia_shogi/services/tournament_service.dart';
 import 'package:komovia_shogi/viewmodels/index.dart';
@@ -27,6 +28,8 @@ void main() {
               .overrideWithValue(FriendService(firestore: firestore)),
           tournamentServiceProvider
               .overrideWithValue(TournamentService(firestore: firestore)),
+          gameInvitationServiceProvider
+              .overrideWithValue(GameInvitationService(firestore: firestore)),
         ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -52,6 +55,21 @@ void main() {
     await tester.pumpAndSettle();
     final screen = tester.widget<FriendsScreen>(find.byType(FriendsScreen));
     expect(screen.initialTabIndex, FriendsScreen.pendingTabIndex);
+  });
+
+  testWidgets('game_invitation opens FriendsScreen on the invitations tab',
+      (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    await pumpWith(
+      tester,
+      firestore,
+      (n) => n.send(
+          uid: 'u1abcdef', title: 'GI', body: 'b', type: 'game_invitation'),
+    );
+    await tester.tap(find.text('GI'));
+    await tester.pumpAndSettle();
+    final screen = tester.widget<FriendsScreen>(find.byType(FriendsScreen));
+    expect(screen.initialTabIndex, FriendsScreen.invitationsTabIndex);
   });
 
   testWidgets('tournament_match opens TournamentBracketScreen', (tester) async {

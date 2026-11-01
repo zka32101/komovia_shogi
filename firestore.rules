@@ -168,6 +168,27 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ---------------- gameInvitations/{invitationId} ----------------
+    // Friend-to-friend game invitations (game_invitation_service.dart, data
+    // shape = komovia_core's GameInvitation). Only participants may read.
+    // The sender creates a pending one under their own uid; only the
+    // recipient may flip pending -> accepted/declined (nothing else may
+    // change); a participant may delete (sender cancel / expired cleanup).
+    // The "not blocked" check is client-side (documented client trust).
+    match /gameInvitations/{invitationId} {
+      allow read: if isEither(resource.data.fromUid, resource.data.toUid);
+      allow create: if isSignedIn() &&
+        request.resource.data.fromUid == request.auth.uid &&
+        request.resource.data.toUid != request.auth.uid &&
+        request.resource.data.status == 'pending';
+      allow update: if isSignedIn() &&
+        request.auth.uid == resource.data.toUid &&
+        resource.data.status == 'pending' &&
+        request.resource.data.status in ['accepted', 'declined'] &&
+        onlyChanged(['status']);
+      allow delete: if isEither(resource.data.fromUid, resource.data.toUid);
+    }
+
     // ---------------- shogi_pvp_games/{gameId} ----------------
     match /shogi_pvp_games/{gameId} {
       allow read: if isEither(resource.data.senteUid, resource.data.goteUid);
