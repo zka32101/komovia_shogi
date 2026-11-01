@@ -91,7 +91,7 @@ Future<void> handlePurchaseUpdates({
           if (plan != null) {
             await entitlementService.grantPremium(
               uid,
-              // productIdを持つのは月額のみ（期間あり）。
+              // productIdを持つのは月額・年額のみ（期間あり）。
               plan.entitlementLength!,
               skipIfAlreadyActive: true,
             );
