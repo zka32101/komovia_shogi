@@ -653,5 +653,26 @@
         "type": "String"
       }
     }
+  },
+  "pvpGamesListTile": "進行中の対局",
+  "pvpGamesListTitle": "進行中の対局",
+  "pvpGamesListEmpty": "進行中の対局はありません",
+  "pvpGamesListOpponent": "vs {opponent}",
+  "@pvpGamesListOpponent": {
+    "placeholders": {
+      "opponent": {
+        "type": "String"
+      }
+    }
+  },
+  "pvpRematchButton": "再戦する",
+  "pvpRematchFailedMessage": "再戦を開始できませんでした",
+  "rematchNotificationTitle": "{displayName}さんから再戦の申し込みです",
+  "@rematchNotificationTitle": {
+    "placeholders": {
+      "displayName": {
+        "type": "String"
+      }
+    }
   }
 }

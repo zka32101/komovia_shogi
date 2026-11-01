@@ -113,6 +113,30 @@ class _ShogiPvpGameScreenState extends ConsumerState<ShogiPvpGameScreen> {
     }
   }
 
+  Future<void> _rematch(ShogiPvpGame pvp, String uid) async {
+    final l10n = AppLocalizations.of(context)!;
+    final myName =
+        uid == pvp.senteUid ? pvp.senteDisplayName : pvp.goteDisplayName;
+    try {
+      final game = await ref.read(rematchShogiPvpGameProvider)(
+        previous: pvp,
+        requesterUid: uid,
+        notificationTitle: l10n.rematchNotificationTitle(myName),
+        notificationBody: l10n.gameStartedNotificationBody,
+      );
+      if (!mounted) return;
+      if (game == null) throw StateError('rematch refused');
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => ShogiPvpGameScreen(gameId: game.id)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.pvpRematchFailedMessage)),
+      );
+    }
+  }
+
   Future<void> _confirmResign(String uid) async {
     final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
@@ -296,6 +320,15 @@ class _ShogiPvpGameScreenState extends ConsumerState<ShogiPvpGameScreen> {
                               child: Text(l10n.pvpClaimForfeitButton),
                             ),
                           ],
+                        ),
+                      ),
+                    if (pvp.isFinished && humanSide != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: FilledButton(
+                          key: const Key('shogi_pvp_rematch_button'),
+                          onPressed: () => _rematch(pvp, uid),
+                          child: Text(l10n.pvpRematchButton),
                         ),
                       ),
                     if (pvp.isActive && humanSide != null)

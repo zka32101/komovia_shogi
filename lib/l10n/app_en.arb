@@ -537,5 +537,26 @@
         "type": "String"
       }
     }
+  },
+  "pvpGamesListTile": "Active games",
+  "pvpGamesListTitle": "Active games",
+  "pvpGamesListEmpty": "No active games",
+  "pvpGamesListOpponent": "vs {opponent}",
+  "@pvpGamesListOpponent": {
+    "placeholders": {
+      "opponent": {
+        "type": "String"
+      }
+    }
+  },
+  "pvpRematchButton": "Rematch",
+  "pvpRematchFailedMessage": "Couldn't start a rematch",
+  "rematchNotificationTitle": "{displayName} wants a rematch",
+  "@rematchNotificationTitle": {
+    "placeholders": {
+      "displayName": {
+        "type": "String"
+      }
+    }
   }
 }
