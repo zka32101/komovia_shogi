@@ -27,10 +27,14 @@ void main() {
   });
 
   group('SubscriptionPlan (komovia_core)', () {
-    test('only monthly maps to a Shogi product id', () {
+    test('monthly and annual map to Shogi product ids', () {
       expect(SubscriptionPlan.monthly.productId,
           PurchaseService.premiumMonthlyProductId);
-      expect(SubscriptionPlan.annual.productId, isNull);
+      expect(SubscriptionPlan.annual.productId,
+          PurchaseService.premiumAnnualProductId);
+      expect(PurchaseService.premiumAnnualProductId, 'shogido_premium_annual');
+      expect(PurchaseService.productIds,
+          contains(PurchaseService.premiumAnnualProductId));
       expect(SubscriptionPlan.lifetime.productId, isNull);
     });
 
@@ -44,6 +48,15 @@ void main() {
           .where((p) => p.productId == PurchaseService.premiumMonthlyProductId)
           .single;
       expect(plan, SubscriptionPlan.monthly);
+    });
+
+    test('annual product id resolves back to annual with a 1-year length', () {
+      final plan = SubscriptionPlan.values
+          .where((p) => p.productId == PurchaseService.premiumAnnualProductId)
+          .single;
+      expect(plan, SubscriptionPlan.annual);
+      expect(plan.entitlementLength, isNotNull);
+      expect(plan.entitlementLength!.inDays, greaterThanOrEqualTo(365));
     });
   });
 
@@ -190,6 +203,7 @@ void main() {
     testWidgets('always shows a restore-purchases button', (tester) async {
       await tester.pumpWidget(app(FakePurchaseService()));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('購入を復元'), 200);
       expect(find.text('購入を復元'), findsOneWidget);
       expect(find.byKey(const ValueKey('subscribe-button')), findsOneWidget);
     });
@@ -198,6 +212,7 @@ void main() {
       final fake = FakePurchaseService();
       await tester.pumpWidget(app(fake));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('購入を復元'), 200);
       await tester.tap(find.text('購入を復元'));
       await tester.pumpAndSettle();
       expect(fake.restoreCalls, 1);
@@ -214,6 +229,35 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('subscribe-button')));
       await tester.pumpAndSettle();
       expect(find.text('ご購入ありがとうございます！'), findsOneWidget);
+      expect(find.byKey(const ValueKey('premium-active')), findsOneWidget);
+    });
+
+    testWidgets('shows monthly and annual plans with fallback prices',
+        (tester) async {
+      await tester.pumpWidget(app(FakePurchaseService(knownProducts: {})));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('plan-monthly')), findsOneWidget);
+      expect(find.byKey(const ValueKey('plan-annual')), findsOneWidget);
+      expect(find.text('¥300/月'), findsOneWidget);
+      expect(find.text('¥2,400/年'), findsOneWidget);
+      expect(find.textContaining('¥990/月'), findsOneWidget);
+    });
+
+    testWidgets('selecting annual buys the annual product', (tester) async {
+      final bought = <String>[];
+      final fake = FakePurchaseService(
+        onBuy: (s, p) {
+          bought.add(p.id);
+          s.emit([purchase(p.id, PurchaseStatus.purchased)]);
+        },
+      );
+      await tester.pumpWidget(app(fake));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('plan-annual')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('subscribe-button')));
+      await tester.pumpAndSettle();
+      expect(bought, [PurchaseService.premiumAnnualProductId]);
       expect(find.byKey(const ValueKey('premium-active')), findsOneWidget);
     });
 

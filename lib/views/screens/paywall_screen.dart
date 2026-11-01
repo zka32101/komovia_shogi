@@ -19,6 +19,7 @@ class PaywallScreen extends ConsumerStatefulWidget {
 
 class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   bool _busy = false;
+  SubscriptionPlan _selectedPlan = SubscriptionPlan.monthly;
 
   Future<void> _run(Future<void> Function(AppLocalizations l10n) action) async {
     final l10n = AppLocalizations.of(context)!;
@@ -38,7 +39,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
   Future<void> _purchase() => _run((l10n) async {
         try {
-          await ref.read(purchaseSubscriptionProvider)(SubscriptionPlan.monthly);
+          await ref.read(purchaseSubscriptionProvider)(_selectedPlan);
           _snack(l10n.purchaseSuccessMessage);
         } on PurchaseCanceledException {
           _snack(l10n.purchaseCanceledMessage);
@@ -51,7 +52,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
   Future<void> _purchaseAiPlan() => _run((l10n) async {
         try {
-          await ref.read(purchaseAiAnalysisPlanProvider)(AiAnalysisPlan.monthly);
+          await ref
+              .read(purchaseAiAnalysisPlanProvider)(AiAnalysisPlan.monthly);
           _snack(l10n.purchaseSuccessMessage);
         } on PurchaseCanceledException {
           _snack(l10n.purchaseCanceledMessage);
@@ -82,6 +84,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final active = entitlements?.isPremiumActive(DateTime.now()) ?? false;
     final product =
         ref.watch(subscriptionProductProvider(SubscriptionPlan.monthly)).value;
+    final annualProduct =
+        ref.watch(subscriptionProductProvider(SubscriptionPlan.annual)).value;
     final aiProduct =
         ref.watch(aiAnalysisPlanProductProvider(AiAnalysisPlan.monthly)).value;
 
@@ -113,12 +117,43 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               ),
             )
           else ...[
-            Card(
-              child: ListTile(
-                title: Text(l10n.premiumMonthlyLabel),
-                trailing: Text(product?.price ?? l10n.premiumMonthlyFallbackPrice),
+            // 月額/年額の選択（ストア価格が取れなければフォールバック表示）。
+            for (final (plan, label, price, note) in [
+              (
+                SubscriptionPlan.monthly,
+                l10n.premiumMonthlyLabel,
+                product?.price ?? l10n.premiumMonthlyFallbackPrice,
+                null,
               ),
-            ),
+              (
+                SubscriptionPlan.annual,
+                l10n.premiumAnnualLabel,
+                annualProduct?.price ?? l10n.premiumAnnualFallbackPrice,
+                l10n.premiumAnnualDescription,
+              ),
+            ])
+              Card(
+                shape: _selectedPlan == plan
+                    ? RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 2),
+                      )
+                    : null,
+                child: ListTile(
+                  key: ValueKey('plan-${plan.name}'),
+                  selected: _selectedPlan == plan,
+                  leading: Icon(_selectedPlan == plan
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked),
+                  title: Text(label),
+                  subtitle: note == null ? null : Text(note),
+                  trailing: Text(price),
+                  onTap:
+                      _busy ? null : () => setState(() => _selectedPlan = plan),
+                ),
+              ),
             const SizedBox(height: 16),
             FilledButton(
               key: const ValueKey('subscribe-button'),

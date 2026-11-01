@@ -7,12 +7,12 @@ export 'package:komovia_core/komovia_core.dart'
 
 /// ペイウォールで販売するプレミアムプランの商品ID。プラン型自体は
 /// komovia_coreの[SubscriptionPlan]（monthly/annual/lifetime）を共有し、
-/// 期間はcoreの`entitlementLength`を使う。将棋道が現状販売しているのは
-/// 月額のみで、年額・買い切りはストア商品が無いためnull（今後の判断事項）。
+/// 期間はcoreの`entitlementLength`を使う。将棋道が販売するのは月額・年額
+/// （komovia_goと同じ価格帯）。買い切りはストア商品が無いためnull（今後の判断事項）。
 extension SubscriptionPlanProductId on SubscriptionPlan {
   String? get productId => switch (this) {
         SubscriptionPlan.monthly => PurchaseService.premiumMonthlyProductId,
-        SubscriptionPlan.annual => null,
+        SubscriptionPlan.annual => PurchaseService.premiumAnnualProductId,
         SubscriptionPlan.lifetime => null,
       };
 }
@@ -42,10 +42,12 @@ class PurchaseService {
   PurchaseService({InAppPurchase? iap}) : _iapOverride = iap;
 
   static const String premiumMonthlyProductId = 'shogido_premium_monthly';
+  static const String premiumAnnualProductId = 'shogido_premium_annual';
   static const String aiAnalysisMonthlyProductId =
       'shogido_ai_analysis_monthly';
   static const Set<String> productIds = {
     premiumMonthlyProductId,
+    premiumAnnualProductId,
     aiAnalysisMonthlyProductId,
   };
 
