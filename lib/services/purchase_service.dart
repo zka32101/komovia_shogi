@@ -1,9 +1,15 @@
 import 'package:in_app_purchase/in_app_purchase.dart';
 
-import 'package:komovia_core/komovia_core.dart' show SubscriptionPlan;
+import 'package:komovia_core/komovia_core.dart' show SubscriptionPlan, AiAnalysisPlan;
 
 export 'package:komovia_core/komovia_core.dart'
-    show SubscriptionPlan, SubscriptionPlanEntitlementLength;
+    show
+        SubscriptionPlan,
+        SubscriptionPlanEntitlementLength,
+        AiAnalysisPlan,
+        AiAnalysisPlanEntitlementLength,
+        PurchaseUnavailableException,
+        PurchaseCanceledException;
 
 /// ペイウォールで販売するプレミアムプランの商品ID。プラン型自体は
 /// komovia_coreの[SubscriptionPlan]（monthly/annual/lifetime）を共有し、
@@ -20,15 +26,12 @@ extension SubscriptionPlanProductId on SubscriptionPlan {
 /// AI分析プラン — プレミアム（[SubscriptionPlan]）とは独立した別売りの月額商品
 /// （¥990/月）。片方・両方・どちらも無し、のいずれもあり得るため、
 /// komovia_goと同じくSubscriptionPlanの一種ではなく兄弟型にしている。
-enum AiAnalysisPlan { monthly }
+/// 型と期間（`entitlementLength`）はkomovia_coreの共有定義を使い、
+/// 商品IDの対応だけをこのアプリで持つ。
 
 extension AiAnalysisPlanProductId on AiAnalysisPlan {
   String get productId => switch (this) {
         AiAnalysisPlan.monthly => PurchaseService.aiAnalysisMonthlyProductId,
-      };
-
-  Duration get entitlementLength => switch (this) {
-        AiAnalysisPlan.monthly => const Duration(days: 30),
       };
 }
 
@@ -87,17 +90,3 @@ class PurchaseService {
   }
 }
 
-/// ストア・商品が利用できない（商品ID未登録など）ために購入できない。
-/// ユーザーのキャンセルや決済失敗とは区別して、正直なメッセージを出すため。
-class PurchaseUnavailableException implements Exception {
-  PurchaseUnavailableException(this.message);
-  final String message;
-  @override
-  String toString() => message;
-}
-
-/// ユーザーが購入をキャンセルした。
-class PurchaseCanceledException implements Exception {
-  @override
-  String toString() => 'canceled';
-}
