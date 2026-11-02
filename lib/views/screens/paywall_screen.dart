@@ -86,6 +86,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         ref.watch(subscriptionProductProvider(SubscriptionPlan.monthly)).value;
     final annualProduct =
         ref.watch(subscriptionProductProvider(SubscriptionPlan.annual)).value;
+    final lifetimeProduct =
+        ref.watch(subscriptionProductProvider(SubscriptionPlan.lifetime)).value;
     final aiProduct =
         ref.watch(aiAnalysisPlanProductProvider(AiAnalysisPlan.monthly)).value;
 
@@ -112,8 +114,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               child: ListTile(
                 key: const ValueKey('premium-active'),
                 leading: const Icon(Icons.workspace_premium),
-                title: Text(l10n.paywallActiveMessage(
-                    _formatDate(entitlements!.premiumEndDate!))),
+                title: Text(entitlements!.isLifetime
+                    ? l10n.paywallLifetimeActiveMessage
+                    : l10n.paywallActiveMessage(
+                        _formatDate(entitlements.premiumEndDate!))),
               ),
             )
           else ...[
@@ -130,6 +134,13 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 l10n.premiumAnnualLabel,
                 annualProduct?.price ?? l10n.premiumAnnualFallbackPrice,
                 l10n.premiumAnnualDescription,
+              ),
+              // 買い切りはフォールバック価格を持たない（ストアから取得）。
+              (
+                SubscriptionPlan.lifetime,
+                l10n.premiumLifetimeLabel,
+                lifetimeProduct?.price ?? '',
+                l10n.premiumLifetimeDescription,
               ),
             ])
               Card(

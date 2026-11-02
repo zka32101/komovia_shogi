@@ -10,9 +10,9 @@ import '../../viewmodels/index.dart';
 
 /// 盤スキン・駒セットスキンの選択画面。
 ///
-/// 現時点ではこのアプリに購入基盤が無いため、カタログに並ぶのは全員無料の
-/// スキンのみ（`shogi_skins.dart` 参照）。各項目は所有/未所有表示を持つが、
-/// 購入ボタンは購入基盤ができるまで出さない。
+/// カタログは全員無料のスキンと、買い切りプラン購入者限定のスキン
+/// （`shogi_skins.dart` 参照）。スキン単体の購入ボタンはまだ出さない
+/// （限定スキンは買い切りプランの特典として付与される）。
 class CosmeticShopScreen extends ConsumerWidget {
   const CosmeticShopScreen({super.key});
 
@@ -21,6 +21,7 @@ class CosmeticShopScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final boardId = ref.watch(selectedBoardSkinIdProvider);
     final pieceId = ref.watch(selectedPieceSkinIdProvider);
+    final isOwned = ref.watch(skinOwnershipProvider);
 
     Widget section(
       String label,
@@ -41,7 +42,7 @@ class CosmeticShopScreen extends ConsumerWidget {
               key: ValueKey('skin-${item.category}-${item.id}'),
               item: item,
               selected: item.id == selectedId,
-              owned: isSkinOwned(item),
+              owned: isOwned(item),
               preview: previewScope(item, const _SkinPreview()),
               selectedLabel: l10n.skinSelectedLabel,
               lockedLabel: l10n.skinLockedLabel,

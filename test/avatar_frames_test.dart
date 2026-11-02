@@ -34,9 +34,13 @@ void main() {
       final ids = kAvatarFrames.map((f) => f.id).toList();
       expect(ids.toSet().length, ids.length);
       expect(kAvatarFrames.length, inInclusiveRange(6, 10));
-      for (final id in ids) {
-        expect(kAvatarFrameRequirements, contains(id));
+      for (final f in kAvatarFrames) {
+        // 買い切り限定フレームはプレイ実績ではなく購入で付与される。
+        expect(kAvatarFrameRequirements.containsKey(f.id), !f.lifetimeExclusive,
+            reason: f.id);
       }
+      expect(kAvatarFrames.where((f) => f.lifetimeExclusive).map((f) => f.id),
+          kLifetimeFrameIds);
       expect(
           kAvatarFrames.map((f) => f.tier).toSet(), FrameTier.values.toSet());
     });
@@ -55,7 +59,23 @@ void main() {
       );
       expect(
         unlockedAvatarFrameIds(entry(games: 100, wins: 10, rating: 1600)),
-        kAvatarFrames.map((f) => f.id).toSet(),
+        kAvatarFrames
+            .where((f) => !f.lifetimeExclusive)
+            .map((f) => f.id)
+            .toSet(),
+      );
+    });
+
+    test('lifetime frame unlocks only via purchased frame ids', () {
+      expect(unlockedAvatarFrameIds(null), isNot(contains(kLifetimeFrameId)));
+      expect(
+        unlockedAvatarFrameIds(null, purchasedFrameIds: kLifetimeFrameIds),
+        {kLifetimeFrameId},
+      );
+      // 購入付与扱いでも、限定でない実績フレームはここからは解放されない。
+      expect(
+        unlockedAvatarFrameIds(null, purchasedFrameIds: {'games_100'}),
+        isEmpty,
       );
     });
 

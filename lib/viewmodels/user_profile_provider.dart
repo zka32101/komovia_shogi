@@ -4,7 +4,9 @@ import 'package:komovia_core/komovia_core.dart';
 import '../models/user_profile.dart';
 import '../src/cosmetics/avatar_frames.dart';
 import '../services/user_profile_service.dart';
+import 'auth_provider.dart';
 import 'leaderboard_provider.dart';
+import 'purchase_provider.dart';
 
 final userProfileServiceProvider = Provider<UserProfileService>(
   (ref) => UserProfileService(),
@@ -47,7 +49,18 @@ final setUserFrameProvider = Provider(
 final unlockedAvatarFrameIdsProvider =
     FutureProvider.family<Set<String>, String>((ref, uid) async {
       final entry = await ref.watch(leaderboardServiceProvider).getEntry(uid);
-      return unlockedAvatarFrameIds(entry);
+      // 購入で付与されたフレームは本人専用の権利ドキュメントにあるため、
+      // 自分自身のときだけ合算する（他人の権利ドキュメントは読めない）。
+      String? me;
+      try {
+        me = ref.watch(currentUidProvider);
+      } catch (_) {
+        me = null;
+      }
+      final purchased = me == uid
+          ? (await ref.watch(userEntitlementsProvider.future)).unlockedFrameIds
+          : const <String>{};
+      return unlockedAvatarFrameIds(entry, purchasedFrameIds: purchased);
     });
 
 /// 表示用に解決した[uid]の選択フレーム。未選択・未解放・読み込み中はnull。

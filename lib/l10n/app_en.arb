@@ -584,5 +584,9 @@
       }
     }
   },
-  "gameInvitationNotificationBody": "Open Friends → Invitations to accept"
+  "gameInvitationNotificationBody": "Open Friends → Invitations to accept",
+  "premiumLifetimeLabel": "Lifetime plan",
+  "premiumLifetimeDescription": "Pay once for permanent Premium, plus the exclusive \"Urushi\" board skin and \"Eternal Game\" avatar frame",
+  "paywallLifetimeActiveMessage": "Lifetime plan purchased (Premium never expires)",
+  "avatarFrameRequirementLifetime": "Lifetime plan purchasers only"
 }

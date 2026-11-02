@@ -4,7 +4,10 @@ import 'package:komovia_core/komovia_core.dart';
 /// 実績で解放される無料アバターフレームのカタログ。
 ///
 /// 課金について: フレームは「遊んで獲得する」無料層のコスメティック。
-/// 購入導線は一切持たない（このアプリには購入基盤自体も存在しない）。
+/// 購入導線は一切持たない。唯一の例外は買い切りプラン購入者限定の
+/// [AvatarFrame.lifetimeExclusive]フレーム（[kLifetimeFrameIds]）で、これは
+/// 買い切り購入完了時に`users/{uid}/entitlements/current`の
+/// `unlockedFrameIds`へ自動で書き込まれる（ショップで個別販売はしない）。
 ///
 /// 解放条件について: このアプリが現在実際に記録している実績データは、
 /// AI対局終了時に `updateShogiRatingAfterGameProvider` が書き込む
@@ -44,7 +47,19 @@ const List<AvatarFrame> kAvatarFrames = [
   AvatarFrame(id: 'rating_1400', name: '有段の風格', tier: FrameTier.gold),
   AvatarFrame(id: 'games_100', name: '百局', tier: FrameTier.platinum),
   AvatarFrame(id: 'rating_1600', name: '名人の器', tier: FrameTier.platinum),
+  AvatarFrame(
+    id: kLifetimeFrameId,
+    name: '永代の一局',
+    tier: FrameTier.platinum,
+    lifetimeExclusive: true,
+  ),
 ];
+
+/// 買い切りプラン購入者限定フレームのid。
+const String kLifetimeFrameId = 'lifetime_eternal';
+
+/// 買い切り購入完了時に自動解放するフレームid集合。
+const Set<String> kLifetimeFrameIds = {kLifetimeFrameId};
 
 const Map<String, FrameRequirement> kAvatarFrameRequirements = {
   'first_game': FrameRequirement(FrameStat.gamesPlayed, 1),
@@ -67,9 +82,17 @@ AvatarFrame? avatarFrameById(String? id) {
 
 /// [entry]（自分のランキングエントリー、未対局ならnull）から解放済み
 /// フレームidを導出する。
-Set<String> unlockedAvatarFrameIds(LeaderboardEntry? entry) => {
+/// [purchasedFrameIds]は購入で付与されたフレーム（買い切り限定）で、
+/// そのまま解放済みとして合算する。
+Set<String> unlockedAvatarFrameIds(
+  LeaderboardEntry? entry, {
+  Set<String> purchasedFrameIds = const {},
+}) =>
+    {
       for (final f in kAvatarFrames)
-        if (kAvatarFrameRequirements[f.id]!.isMetBy(entry)) f.id,
+        if (kAvatarFrameRequirements[f.id]?.isMetBy(entry) ?? false) f.id,
+      for (final f in kAvatarFrames)
+        if (f.lifetimeExclusive && purchasedFrameIds.contains(f.id)) f.id,
     };
 
 /// 選択中フレームを表示用に解決する。未選択・未知のid・未解放のidは

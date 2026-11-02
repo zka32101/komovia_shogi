@@ -7,12 +7,11 @@ import 'package:komovia_core/komovia_core.dart';
 /// で表し、実際の見た目（色）はこのアプリ固有の [BoardSkinStyle] /
 /// [PieceSkinStyle] で id に紐付ける。
 ///
-/// 課金について: このアプリにはまだ購入・サブスクリプション基盤
-/// （in_app_purchase / Entitlement の永続化 / レシート検証）が存在しない。
-/// そのため現時点では全員無料（[CosmeticItem.isFreeForAll]）のスキンだけを
-/// 有効化しており、有料・サブスク同梱スキンは下のTODOコメントとして
-/// カタログ定義だけ用意してある。購入基盤ができたら該当行のコメントを外し、
-/// [isSkinOwned] に実際のサブスク状態・購入済み productId を渡すこと。
+/// 課金について: 購入基盤（in_app_purchase / `users/{uid}/entitlements/current`）
+/// は月額・年額・買い切りプランとして存在する。課金と連動して有効化済みの
+/// スキンは買い切り購入者限定の「漆塗り」（[CosmeticItem.includedWithLifetime]）
+/// のみ。スキンの個別販売（iapProductId）とサブスク同梱スキンはまだ
+/// 販売していないため、下のTODOコメントとしてカタログ定義だけ残してある。
 const kBoardSkinCategory = 'boardSkin';
 const kPieceSkinCategory = 'pieceSkin';
 
@@ -55,11 +54,12 @@ const List<CosmeticItem> kBoardSkins = [
   // CosmeticItem(id: 'kaya_dark', category: kBoardSkinCategory, name: '本榧・濃',
   //     includedWithSubscription: true,
   //     iapProductId: 'komovia_shogi_board_kaya_dark'),
-  // CosmeticItem(id: 'urushi', category: kBoardSkinCategory, name: '漆塗り',
-  //     iapProductId: 'komovia_shogi_board_urushi'),
   // CosmeticItem(id: 'mono', category: kBoardSkinCategory, name: 'モノトーン',
   //     includedWithSubscription: true,
   //     iapProductId: 'komovia_shogi_board_mono'),
+  // 買い切りプラン購入者限定（月額・年額では付与されない）。
+  CosmeticItem(id: 'urushi', category: kBoardSkinCategory, name: '漆塗り',
+      includedWithLifetime: true),
 ];
 
 const List<CosmeticItem> kPieceSkins = [
@@ -94,6 +94,12 @@ const Map<String, BoardSkinStyle> _boardStyles = {
     outerBorder: Color(0xFF34401F),
     handBarColor: Color(0xFFA3B588),
   ),
+  'urushi': BoardSkinStyle(
+    cellColor: Color(0xFF5A1E14),
+    cellBorder: Color(0xFFC9A44A),
+    outerBorder: Color(0xFF1A0805),
+    handBarColor: Color(0xFF3A120B),
+  ),
 };
 
 const Map<String, PieceSkinStyle> _pieceStyles = {
@@ -121,16 +127,18 @@ BoardSkinStyle boardSkinStyleById(String? id) =>
 PieceSkinStyle pieceSkinStyleById(String? id) =>
     _pieceStyles[id] ?? _pieceStyles[defaultPieceSkinId]!;
 
-/// 所有判定。購入基盤ができるまでは常に「未加入・購入なし」として判定する
-/// （＝無料スキンのみ所有扱い）。
+/// 所有判定。[isLifetimePurchaser]には買い切り購入者か
+/// （`UserEntitlements.isLifetime`）を渡す。
 bool isSkinOwned(
   CosmeticItem item, {
   bool hasActiveSubscription = false,
   Set<String> purchasedProductIds = const {},
+  bool isLifetimePurchaser = false,
 }) =>
     item.isOwnedBy(
       hasActiveSubscription: hasActiveSubscription,
       purchasedProductIds: purchasedProductIds,
+      isLifetimePurchaser: isLifetimePurchaser,
     );
 
 /// アプリ全体の盤面描画に現在のスキンを渡す。`MiniBoardWidget` はこれが

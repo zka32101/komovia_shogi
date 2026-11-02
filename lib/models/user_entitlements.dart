@@ -11,6 +11,8 @@ class UserEntitlements {
     this.premiumStartDate,
     this.premiumEndDate,
     this.aiAnalysisPlanEndDate,
+    this.premiumIsLifetime = false,
+    this.unlockedFrameIds = const {},
   });
 
   static const UserEntitlements none = UserEntitlements();
@@ -20,6 +22,17 @@ class UserEntitlements {
 
   /// AI分析プラン（プレミアムとは別売り）の期限。
   final DateTime? aiAnalysisPlanEndDate;
+
+  /// 買い切り（[SubscriptionPlan.lifetime]）購入者か。期限なしでプレミアムが
+  /// 永久に有効になり、買い切り限定スキン/フレームの所有判定にも使う。
+  final bool premiumIsLifetime;
+
+  /// 購入時に付与されたアバターフレームid（買い切り限定フレーム）。
+  /// 実績フレームはランキングから毎回導出するので、ここには入らない。
+  final Set<String> unlockedFrameIds;
+
+  /// komovia_coreの[Entitlement.isLifetime]相当。
+  bool get isLifetime => premiumIsLifetime;
 
   /// 期限判定はkomovia_coreの[Entitlement.isCurrentlyActive]に委譲する。
   bool isPremiumActive(DateTime now) =>
@@ -37,16 +50,24 @@ class UserEntitlements {
   /// komovia_coreの共通[Entitlement]形式へ変換する（komovia_goの
   /// `UserEntitlement.toEntitlement`と同じ役割）。プラン種別は保存して
   /// いないのでplanは常にnull。
-  Entitlement toEntitlement(DateTime now) => Entitlement(
-        isActive: premiumEndDate != null,
-        startedAt: premiumStartDate,
-        expiresAt: premiumEndDate,
-      );
+  Entitlement toEntitlement(DateTime now) => premiumIsLifetime
+      ? Entitlement(
+          isActive: true,
+          plan: SubscriptionPlan.lifetime,
+          startedAt: premiumStartDate,
+        )
+      : Entitlement(
+          isActive: premiumEndDate != null,
+          startedAt: premiumStartDate,
+          expiresAt: premiumEndDate,
+        );
 
   Map<String, Object?> toJson() => {
         'premiumStartDate': premiumStartDate?.toIso8601String(),
         'premiumEndDate': premiumEndDate?.toIso8601String(),
         'aiAnalysisPlanEndDate': aiAnalysisPlanEndDate?.toIso8601String(),
+        'premiumIsLifetime': premiumIsLifetime,
+        'unlockedFrameIds': unlockedFrameIds.toList(),
       };
 
   factory UserEntitlements.fromJson(Map<String, Object?> json) {
@@ -56,6 +77,11 @@ class UserEntitlements {
       premiumStartDate: parse(json['premiumStartDate']),
       premiumEndDate: parse(json['premiumEndDate']),
       aiAnalysisPlanEndDate: parse(json['aiAnalysisPlanEndDate']),
+      premiumIsLifetime: json['premiumIsLifetime'] == true,
+      unlockedFrameIds: {
+        for (final v in (json['unlockedFrameIds'] as List?) ?? const [])
+          if (v is String) v,
+      },
     );
   }
 }
