@@ -50,6 +50,23 @@ class EntitlementService {
     return true;
   }
 
+  /// 買い切りプランを付与する（期限なしの永久プレミアム）。同時に
+  /// [frameIds]（買い切り限定フレーム）を解放済みフレーム集合へ追加する。
+  /// 冪等（再配信・復元で何度呼ばれても同じ状態になる）。
+  Future<void> grantLifetime(
+    String uid, {
+    Set<String> frameIds = const {},
+  }) async {
+    final current = await get(uid);
+    await _doc(uid).set({
+      'premiumIsLifetime': true,
+      if (!current.isLifetime) 'premiumStartDate': _clock().toIso8601String(),
+      'premiumEndDate': null,
+      if (frameIds.isNotEmpty)
+        'unlockedFrameIds': FieldValue.arrayUnion(frameIds.toList()),
+    }, SetOptions(merge: true));
+  }
+
   /// AI分析プランを[length]だけ付与する（プレミアムとは独立したフィールド）。
   /// [skipIfAlreadyActive]は[grantPremium]と同じ理由。
   Future<bool> grantAiAnalysisPlan(

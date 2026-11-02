@@ -700,5 +700,9 @@
       }
     }
   },
-  "gameInvitationNotificationBody": "「フレンド」→「対局の招待」タブで承認できます"
+  "gameInvitationNotificationBody": "「フレンド」→「対局の招待」タブで承認できます",
+  "premiumLifetimeLabel": "買い切りプラン",
+  "premiumLifetimeDescription": "一度の購入でプレミアムが永久に有効。限定盤スキン「漆塗り」と限定フレーム「永代の一局」付き",
+  "paywallLifetimeActiveMessage": "買い切りプラン購入済み（永久にプレミアム有効）",
+  "avatarFrameRequirementLifetime": "買い切りプラン購入者限定"
 }

@@ -77,7 +77,9 @@ class AvatarFramePicker extends StatelessWidget {
       ),
       title: Text(frame.name),
       subtitle: Text(
-        requirementLabel(l10n, kAvatarFrameRequirements[frame.id]!),
+        frame.lifetimeExclusive
+            ? l10n.avatarFrameRequirementLifetime
+            : requirementLabel(l10n, kAvatarFrameRequirements[frame.id]!),
       ),
       trailing: !unlocked
           ? const Icon(Icons.lock, size: 18)

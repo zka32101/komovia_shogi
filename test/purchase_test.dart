@@ -7,6 +7,7 @@ import 'package:komovia_shogi/l10n/app_localizations.dart';
 import 'package:komovia_shogi/models/user_entitlements.dart';
 import 'package:komovia_shogi/services/entitlement_service.dart';
 import 'package:komovia_shogi/services/purchase_service.dart';
+import 'package:komovia_shogi/src/cosmetics/avatar_frames.dart';
 import 'package:komovia_shogi/viewmodels/auth_provider.dart';
 import 'package:komovia_shogi/viewmodels/purchase_provider.dart';
 import 'package:komovia_shogi/views/screens/paywall_screen.dart';
@@ -35,7 +36,9 @@ void main() {
       expect(PurchaseService.premiumAnnualProductId, 'shogido_premium_annual');
       expect(PurchaseService.productIds,
           contains(PurchaseService.premiumAnnualProductId));
-      expect(SubscriptionPlan.lifetime.productId, isNull);
+      expect(SubscriptionPlan.lifetime.productId, 'shogido_premium_lifetime');
+      expect(PurchaseService.productIds,
+          contains(PurchaseService.premiumLifetimeProductId));
     });
 
     test('monthly keeps the 30-day entitlement length', () {
@@ -107,6 +110,49 @@ void main() {
           await entitlements.grantPremium('u1', const Duration(days: 30),
               skipIfAlreadyActive: true),
           isTrue);
+    });
+  });
+
+  group('買い切りプラン', () {
+    const lifetime = PurchaseService.premiumLifetimeProductId;
+
+    test('grants permanent premium plus the lifetime-exclusive frame',
+        () async {
+      final fake = FakePurchaseService();
+      await handlePurchaseUpdates(
+        purchases: [purchase(lifetime, PurchaseStatus.purchased)],
+        purchaseService: fake,
+        entitlementService: entitlements,
+        uid: 'u1',
+      );
+      final e = await entitlements.get('u1');
+      expect(e.isLifetime, isTrue);
+      expect(e.isPremiumActive(now.add(const Duration(days: 365 * 50))),
+          isTrue);
+      expect(e.toEntitlement(now).isLifetime, isTrue);
+      expect(e.unlockedFrameIds, contains(kLifetimeFrameId));
+      expect(fake.completed, [lifetime]);
+    });
+
+    test('re-delivery is idempotent', () async {
+      for (var i = 0; i < 2; i++) {
+        await handlePurchaseUpdates(
+          purchases: [purchase(lifetime, PurchaseStatus.restored)],
+          purchaseService: FakePurchaseService(),
+          entitlementService: entitlements,
+          uid: 'u1',
+        );
+      }
+      final e = await entitlements.get('u1');
+      expect(e.unlockedFrameIds, {kLifetimeFrameId});
+      expect(e.premiumStartDate, now);
+    });
+
+    test('monthly subscribers are not lifetime purchasers', () async {
+      await entitlements.grantPremium('u1', const Duration(days: 30));
+      final e = await entitlements.get('u1');
+      expect(e.isLifetime, isFalse);
+      expect(e.unlockedFrameIds, isEmpty);
     });
   });
 
@@ -240,6 +286,10 @@ void main() {
       expect(find.byKey(const ValueKey('plan-annual')), findsOneWidget);
       expect(find.text('¥300/月'), findsOneWidget);
       expect(find.text('¥2,400/年'), findsOneWidget);
+      expect(find.byKey(const ValueKey('plan-lifetime')), findsOneWidget);
+      await tester.scrollUntilVisible(
+          find.textContaining('¥990/月'), 200,
+          scrollable: find.byType(Scrollable).first);
       expect(find.textContaining('¥990/月'), findsOneWidget);
     });
 
@@ -268,6 +318,39 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('subscribe-button')));
       await tester.pumpAndSettle();
       expect(find.textContaining('現在ご購入いただけません'), findsOneWidget);
+    });
+  });
+
+  group('PaywallScreen lifetime', () {
+    testWidgets('selecting lifetime buys it and shows the permanent state',
+        (tester) async {
+      final fake = FakePurchaseService(
+          onBuy: (self, p) =>
+              self.emit([purchase(p.id, PurchaseStatus.purchased)]));
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          currentUidProvider.overrideWithValue('u1'),
+          purchaseServiceProvider.overrideWithValue(fake),
+          entitlementServiceProvider.overrideWithValue(
+              EntitlementService(firestore: db, clock: DateTime.now)),
+        ],
+        child: const MaterialApp(
+          locale: Locale('ja'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: PaywallScreen(),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('plan-lifetime')));
+      await tester.pump();
+      await tester.ensureVisible(find.byKey(const ValueKey('subscribe-button')));
+      await tester.tap(find.byKey(const ValueKey('subscribe-button')));
+      await tester.pumpAndSettle();
+      expect(fake.completed, [PurchaseService.premiumLifetimeProductId]);
+      expect(find.text('買い切りプラン購入済み（永久にプレミアム有効）'), findsOneWidget);
+      final e = await EntitlementService(firestore: db).get('u1');
+      expect(e.unlockedFrameIds, contains(kLifetimeFrameId));
     });
   });
 

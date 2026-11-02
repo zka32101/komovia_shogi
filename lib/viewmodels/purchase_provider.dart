@@ -6,6 +6,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import '../models/user_entitlements.dart';
 import '../services/entitlement_service.dart';
 import '../services/purchase_service.dart';
+import '../src/cosmetics/avatar_frames.dart';
 import 'auth_provider.dart';
 
 /// komovia_goの`purchase_provider.dart`を将棋道向けに移植したもの。
@@ -38,6 +39,12 @@ final userEntitlementsProvider = StreamProvider<UserEntitlements>((ref) {
   }
   if (uid == null) return Stream.value(UserEntitlements.none);
   return ref.watch(entitlementServiceProvider).stream(uid);
+});
+
+/// 買い切りプラン購入者か（買い切り限定スキンの所有判定用）。
+final isLifetimePurchaserProvider = Provider<bool>((ref) {
+  final e = ref.watch(userEntitlementsProvider).value ?? UserEntitlements.none;
+  return e.isLifetime;
 });
 
 /// プレミアムが現在有効か。
@@ -89,12 +96,8 @@ Future<void> handlePurchaseUpdates({
         if (plan == null && aiPlan == null) break;
         try {
           if (plan != null) {
-            await entitlementService.grantPremium(
-              uid,
-              // productIdを持つのは月額・年額のみ（期間あり）。
-              plan.entitlementLength!,
-              skipIfAlreadyActive: true,
-            );
+            await grantPremiumForPlan(entitlementService, uid, plan,
+                skipIfAlreadyActive: true);
           } else {
             await entitlementService.grantAiAnalysisPlan(
               uid,
@@ -112,6 +115,23 @@ Future<void> handlePurchaseUpdates({
       case PurchaseStatus.pending:
         break;
     }
+  }
+}
+
+/// [plan]に応じてプレミアムを付与する。買い切りは期限なし＋買い切り限定
+/// フレーム（[kLifetimeFrameIds]）の解放、月額・年額は期間付与。
+Future<void> grantPremiumForPlan(
+  EntitlementService entitlementService,
+  String uid,
+  SubscriptionPlan plan, {
+  bool skipIfAlreadyActive = false,
+}) async {
+  final length = plan.entitlementLength;
+  if (length == null) {
+    await entitlementService.grantLifetime(uid, frameIds: kLifetimeFrameIds);
+  } else {
+    await entitlementService.grantPremium(uid, length,
+        skipIfAlreadyActive: skipIfAlreadyActive);
   }
 }
 
@@ -169,16 +189,14 @@ final purchaseSubscriptionProvider =
       throw PurchaseUnavailableException('購入にはサインインが必要です。');
     }
     final productId = plan.productId;
-    final length = plan.entitlementLength;
-    if (productId == null || length == null) {
-      // 年額・買い切りは将棋道ではまだ販売していない。
+    if (productId == null) {
       throw PurchaseUnavailableException('このプランは現在販売していません。');
     }
     return runPurchaseFlow(
       purchaseService: ref.read(purchaseServiceProvider),
       productId: productId,
       grant: () =>
-          ref.read(entitlementServiceProvider).grantPremium(uid, length),
+          grantPremiumForPlan(ref.read(entitlementServiceProvider), uid, plan),
     );
   };
 });

@@ -16,6 +16,7 @@ void main() {
   group('catalog', () {
     test('every active skin is free-for-all and has a style', () {
       for (final item in [...kBoardSkins, ...kPieceSkins]) {
+        if (item.includedWithLifetime) continue;
         expect(item.isFreeForAll, isTrue, reason: item.id);
         expect(isSkinOwned(item), isTrue);
       }
@@ -27,6 +28,16 @@ void main() {
         expect(identical(pieceSkinStyleById(s.id), pieceSkinStyleById(null)),
             s.id == defaultPieceSkinId);
       }
+    });
+
+    test('urushi is a lifetime-only skin with its own style', () {
+      final urushi = kBoardSkins.firstWhere((e) => e.id == 'urushi');
+      expect(urushi.includedWithLifetime, isTrue);
+      expect(isSkinOwned(urushi), isFalse);
+      expect(isSkinOwned(urushi, hasActiveSubscription: true), isFalse);
+      expect(isSkinOwned(urushi, isLifetimePurchaser: true), isTrue);
+      expect(identical(boardSkinStyleById('urushi'), boardSkinStyleById(null)),
+          isFalse);
     });
 
     test('ids are unique and include the defaults', () {
